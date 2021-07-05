@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TOP-DW-Query-Center</title>
+    <script src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.8.0.js"></script>
+    <script src="../echarts.js"></script>
+    <style>
+
+        .echart_big_div_sync{
+            width: 1800px;
+            height: 800px;
+            float: left;
+        }
+
+        .div_name {
+            margin: 0 5%;
+            border-top: 1px solid #f4a460;
+            text-align: center;
+            font-size: medium;
+            font-style: normal;
+        }
+
+    </style>
+
+    <script type="text/javascript">
+        let default_database_str = 'choose database';
+        let default_table_address_str = 'choose table_address'
+
+        $(document).ready(function () {
+            console.log("page ready");
+            $("#loading").hide();
+            update_table_address_range();
+            
+            $(".table_address_selector").change( function(){
+                update_result()
+            });
+
+            $(".table_type_selector").change( function(){
+                update_table_address_range();
+                update_result()
+            });
+            
+            
+            $(".database_selector").change( function(){
+                update_result()
+            });
+            function update_result(){
+                database = $(".database_selector").val()
+                if(database == default_database_str) return;
+                table_type = $(".table_type_selector").val()
+                table_address = $(".table_address_selector").val()
+                full_address = ""
+                if(table_type == "beacon"){
+                    full_address = "Ta00013T7BKn5pP8Zi3K5z2Z5BQuSXTf5u37Se79x" + table_address
+                }else if (table_type == "zec"){
+                    full_address = "Ta00025E3y1TBsbnvZHcq1eELBBQH4D5tFbg1jQqY" + table_address
+                }else if (table_type == "sharding"){
+                    full_address = "Ta0000gRD2qVpp2S7UpjAsznRiRhbE1qNnhMbEDp" + table_address
+                }
+                query_sync_path = "/query_xsync_interval/?database="+database+"&table_address="+full_address
+                console.log(query_sync_path)
+                xsync_html_obj = $.ajax({
+                    url : query_sync_path,
+                    async:true,
+                    before:function(){
+                        $("#loading").show();
+                        $("#Result_DIV").animate({ opacity: .4 }, 500, function () { })
+                    },
+                    complete:function(){
+                        $("#loading").hide();
+                        $("#Result_DIV").animate({ opacity: 1 }, 1000, function () { })
+                        $("#Result_DIV").html(xsync_html_obj.responseText)
+                    },
+                });
+            };
+        })
+        function update_table_address_range() {
+            table_type = $(".table_type_selector").val()
+            if (table_type == "beacon") {
+                address_str = "<option>@0</option>"
+                $(".table_address_selector").html(address_str)
+            } else if (table_type == "zec") {
+                address_str = ""
+                for (var i = 0; i < 3; ++i) {
+                    address_str = address_str + "<option>@" + i + "</option>"
+                }
+                $(".table_address_selector").html(address_str)
+            } else if (table_type == "sharding") {
+                address_str = ""
+                for (var i = 0; i < 255; ++i) {
+                    address_str = address_str + "<option>@" + i + "</option>"
+                }
+                $(".table_address_selector").html(address_str)
+            }
+        };
+    </script>
+</head>
+
+<body>
+<!-- 
+XINLINE_CONSTEXPR char const * sys_contract_beacon_table_block_addr{ "Ta00013T7BKn5pP8Zi3K5z2Z5BQuSXTf5u37Se79x" };
+XINLINE_CONSTEXPR char const * sys_contract_zec_table_block_addr{ "Ta00025E3y1TBsbnvZHcq1eELBBQH4D5tFbg1jQqY" };
+XINLINE_CONSTEXPR char const * sys_contract_sharding_table_block_addr{ "Ta0000gRD2qVpp2S7UpjAsznRiRhbE1qNnhMbEDp" };
+ -->
+    <div>
+        database:
+        <select class="database_selector">
+            <option>choose database</option>
+            {%- for database in database_list -%}
+            <option value="{{database}}">{{database}}</option>
+            {%- endfor -%}
+        </select>
+        table_type:
+        <select class="table_type_selector">
+            <option>beacon</option>
+            <option>zec</option>
+            <option>sharding</option>
+        </select>
+        table_address:
+        <select class="table_address_selector">
+        </select>
+        
+    </div>
+
+    <div id="loading" style="width:66px;height:66px;position:absolute;top:50%;left:50%;">
+        　　<img alt="加载中..." src="../loading.gif" />
+    </div>
+
+    <div id="Result_DIV"></div>
+</body>
+
+
+</html>

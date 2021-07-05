@@ -1,0 +1,101 @@
+<div class= "median_echartdiv" id="{{ name }}" ></div>
+<script type="text/javascript">
+    var myChart = echarts.init(document.getElementById('{{ name }}'));
+    var option = {
+        title: {
+            text: '{{ name }}',
+            textStyle:{
+                width: 450,
+                overflow: "break",
+            },
+        },
+        toolbox:{
+            show: true,
+            feature: {
+                dataZoom:{
+                    yAxisIndex: "none",
+                    type: "inside"
+                },
+                dataView: {
+                    readOnly: true
+                },
+            },
+            right:'10%'
+        },
+        tooltip:{
+            trigger: 'axis'
+        },
+        dataZoom: [{
+            type: 'slider',
+            show: true,
+            xAxisIndex: [0],
+            left: '12%', 
+            bottom: '8%',
+            start: 0,
+            end: 100 
+        }],
+        legend:{
+            data:[
+                {%- for series_name in value_series.keys() -%}
+                    '{{ series_name }}',
+                {%- endfor -%}
+            ],
+            top:"10%",
+            selected:{
+                'count':false
+            }
+        },
+        grid:{
+            left: "13%",
+            right: "10%",
+            bottom: "20%",
+            top: "20%",
+        },
+        xAxis: {
+            name: "时间戳",
+            type: 'category',
+            data: [
+                {%- for item in list_x -%}
+                    '{{ item }}',
+                {%- endfor -%}
+            ]
+        },
+        yAxis: {
+            min:0,
+            max:6,
+            name: "角色",
+            type: 'value',
+            axisLabel:{
+                show:true,
+                formatter: function(value,index){
+                    var res = "";
+                    switch(value){
+                        case 0: res="";break;
+                        case 1: res="edge";break;
+                        case 2: res="archive";break;
+                        case 3: res="validator";break;
+                        case 4: res="auditor";break;
+                        case 5: res="zec";break;
+                        case 6: res="rec";break;
+                        default:"?";
+                    }
+                    return res;
+                },
+            }
+        },
+        series: [
+            {%- for item in value_series -%}
+            {
+                type: 'line',
+                name: '{{item}}',
+                data: [
+                    {%- for _v in value_series[item] -%}
+                            {{ _v }},
+                    {%- endfor -%}
+                ]
+            },
+            {%- endfor -%}
+        ]
+    };
+    option && myChart.setOption(option);
+</script>

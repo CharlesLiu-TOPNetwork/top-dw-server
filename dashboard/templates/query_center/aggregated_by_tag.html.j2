@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TOP-DW-Query-Center</title>
+    <script src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.8.0.js"></script>
+    <script src="../echarts.min.js"></script>
+    <style>
+        .echart_big_div {
+            width: 1400px;
+            height: 800px;
+            margin: 0 auto;
+        }
+
+        .div_name {
+            margin: 0 5%;
+            border-top: 1px solid #f4a460;
+            text-align: center;
+            font-size: medium;
+            font-style: normal;
+        }
+    </style>
+
+    <script type="text/javascript">
+        let default_database_str = 'choose database';
+        let default_category_str = 'choose category';
+        let default_tag_str = 'choose tag';
+        $(document).ready(function () {
+            console.log("page ready");
+            $("#loading").hide();
+            $("#b01").click(function () {
+                database = $(".database_selector").val();
+                type = $(".type_selector").val();
+                category = $(".category_selector").val();
+                tag = $(".tag_selector").val();
+                if(tag==null){
+                    $("#Result_DIV").html('seems has not tag in this database-type-category');
+                    return
+                }
+                if(database == default_database_str || category==default_category_str || tag == default_tag_str || tag == ''||tag == null){
+                    $("#Result_DIV").html('please choose database && category && tag && type!');
+                    return
+                }
+                query_path = "/query_category_tag_metrics/?database=" + database +  "&category=" + category + "&tag=" + tag + "&type=" + type
+                console.log(query_path)
+                htmlobj = $.ajax({
+                    url: query_path,
+                    async: true,
+                    beforeSend: function () {
+                        $("#Result_DIV").animate({ opacity: .4 }, 500, function () { })
+                        $("#loading").show();
+                        console.log("before send");
+                    },
+                    complete: function () {
+                        $("#Result_DIV").animate({ opacity: 1 }, 1000, function () { })
+                        $("#loading").hide();
+                        $("#Result_DIV").html(htmlobj.responseText);
+                        console.log("after send");
+                    },
+
+                });
+            });
+            // reset tag when changed type
+            $(".type_selector").change( function(){
+                // query default tag with the first category
+                database = $(".database_selector").val();
+                type = $(".type_selector").val();
+                category = $(".category_selector").val();
+                if(category == default_category_str || database == default_database_str){
+                    $(".tag_selector").html('<option>choose tag</option>')
+                    return
+                }
+                query_path = "/query_tags/?database="+database+"&category="+category+"&type="+type
+                console.log(query_path)
+                tag_htmlobj = $.ajax({
+                    url: query_path,
+                    async:true,
+                    complete:function(){
+                        $(".tag_selector").html(tag_htmlobj.responseText)
+                    },
+                });
+            });
+            // get category when set database
+            $(".database_selector").change( function(){
+                database = $(".database_selector").val();
+                if(database == default_database_str){
+                    $(".category_selector").html('<option>choose ip</option>')
+                    return
+                }
+                console.log("change database selector "+database)
+                query_path = "/query_categorys/?database=" + database
+                console.log(query_path)
+                categorys_htmlobj = $.ajax({
+                    url: query_path,
+                    async:true,
+                    complete:function(){
+                        console.log("after select database")
+                        $(".category_selector").html(categorys_htmlobj.responseText)
+
+                        // query default tag with the first category
+                        type = $(".type_selector").val();
+                        category = $(".category_selector").val();
+                        if(category == default_category_str || database == default_database_str){
+                            $(".tag_selector").html('<option>choose tag</option>')
+                            return
+                        }
+                        query_path2 = "/query_tags/?database="+database+"&category="+category+"&type="+type
+                        console.log(query_path2)
+                        
+                        tag_htmlobj = $.ajax({
+                            url: query_path2,
+                            async:true,
+                            complete:function(){
+                                $(".tag_selector").html(tag_htmlobj.responseText)
+                            },
+                        });
+                        
+                    },
+                });
+            });
+            // get tag when set category
+            $(".category_selector").change( function(){
+                database = $(".database_selector").val();
+                type = $(".type_selector").val();
+                category = $(".category_selector").val();
+                if(category == default_category_str || database == default_database_str){
+                    $(".tag_selector").html('<option>choose tag</option>')
+                    return
+                }
+                query_path = "/query_tags/?database="+database+"&category="+category+"&type="+type
+                console.log(query_path)
+                tag_htmlobj = $.ajax({
+                    url: query_path,
+                    async:true,
+                    complete:function(){
+                        $(".tag_selector").html(tag_htmlobj.responseText)
+                    },
+                });
+            });
+        })
+    </script>
+</head>
+
+<body>
+    <div>
+        database:
+        <select class="database_selector">
+            <option>choose database</option>
+            {%- for database in database_list -%}
+            <option value="{{database}}">{{database}}</option>
+            {%- endfor -%}
+        </select>
+        type:
+        <select class="type_selector">
+            <option>counter</option>
+            <option>timer</option>
+            <option>flow</option>
+        </select>
+        category:
+        <select class="category_selector">
+            <option>choose category</option>
+        </select>
+        tag:
+        <select class="tag_selector">
+            <option>choose tag</option>
+        </select>
+        <button id="b01" type="button">query_metrics</button>
+        
+    </div>
+    <div id="loading" style="width:66px;height:66px;position:absolute;top:50%;left:50%;">
+        　　<img alt="加载中..." src="../loading.gif" />
+    </div>
+
+    <div id="Result_DIV"></div>
+</body>
+
+
+</html>

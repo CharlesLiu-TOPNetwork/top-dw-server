@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TOP-DW-Query-Center</title>
+    <script src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.8.0.js"></script>
+    <script src="../echarts.min.js"></script>
+    <style>
+        .echartdiv {
+            width: 600px;
+            height: 400px;
+            float: left;
+        }
+
+        .median_echartdiv{
+            width : 1300px;
+            height: 600px;
+            margin: 0 auto;
+        }
+
+        .div_name {
+            margin: 0 5%;
+            border-top: 1px solid #f4a460;
+            text-align: center;
+            font-size: medium;
+            font-style: normal;
+        }
+    </style>
+
+    <script type="text/javascript">
+        let default_database_str = 'choose database';
+        let default_public_ip_str = 'choose ip';
+        let default_category_str = 'choose category';
+        $(document).ready(function () {
+            console.log("page ready");
+            $("#loading").hide();
+            
+            $(".category_selector").change( function(){
+                database = $(".database_selector").val();
+                public_ip = $(".public_ip_selector").val();
+                if(database == default_database_str){
+                    $(".public_ip_selector").html('<option>choose ip</option>')
+                    $(".category_selector").html('<option>choose category</option>')
+                    return
+                }
+                if(public_ip == default_public_ip_str){
+                    $(".category_selector").html('<option>choose category</option>')
+                    return
+                }
+
+                update_result();
+            });
+            $(".public_ip_selector").change( function(){
+                database = $(".database_selector").val();
+                public_ip = $(".public_ip_selector").val();
+                if(database == default_database_str){
+                    $(".public_ip_selector").html('<option>choose ip</option>')
+                    return
+                }
+                
+                update_result();
+
+            });
+            $(".database_selector").change( function(){
+                database = $(".database_selector").val();
+                if(database == default_database_str){
+                    $(".public_ip_selector").html('<option>choose ip</option>')
+                    return
+                }
+                console.log("change database selector "+database)
+                query_path = "/query_ips/?database=" + database
+                console.log(query_path)
+                ips_htmlobj = $.ajax({
+                    url: query_path,
+                    async:true,
+                    complete:function(){
+                        console.log("after select database")
+                        $(".public_ip_selector").html(ips_htmlobj.responseText)
+                        update_result()
+                    },
+                });
+                query_category_path = "/query_categorys/?database="+database+"&"
+                category_htmlobj = $.ajax({
+                    url:query_category_path,
+                    async:true,
+                    complete:function(){
+                        $(".category_selector").html(category_htmlobj.responseText)
+                        update_result()
+                    },
+                });
+            });
+            function update_result(){
+                database = $(".database_selector").val()
+                public_ip = $(".public_ip_selector").val()
+                category = $(".category_selector").val()
+                if(database==default_database_str || public_ip ==default_public_ip_str){
+                    return
+                }
+                query_vnode_status_path = "/query_ip_vnode_status/?database=" + database + "&public_ip=" + public_ip
+                console.log(query_vnode_status_path)
+                vnode_htmlobj = $.ajax({
+                    url: query_vnode_status_path,
+                    async: true,
+                    complete: function(){
+                        $("#VnodeStatus_DIV").html(vnode_htmlobj.responseText);
+                    },
+                });
+                
+                if(category == default_category_str){
+                    return
+                }
+                query_metrics_path = "/query_ip_category_metrics/?database=" + database + "&public_ip=" + public_ip + "&category=" + category
+                console.log(query_metrics_path)
+                htmlobj = $.ajax({
+                    url: query_metrics_path,
+                    async: true,
+                    beforeSend: function () {
+                        $("#Result_DIV").animate({ opacity: .4 }, 500, function () { })
+                        $("#loading").show();
+                        console.log("before send");
+                    },
+                    complete: function () {
+                        $("#Result_DIV").animate({ opacity: 1 }, 1000, function () { })
+                        $("#loading").hide();
+                        $("#Result_DIV").html(htmlobj.responseText);
+                        console.log("after send");
+                    },
+
+                });
+            };
+        })
+    </script>
+</head>
+
+<body>
+    <div>
+        database:
+        <select class="database_selector">
+            <option>choose database</option>
+            {%- for database in database_list -%}
+            <option value="{{database}}">{{database}}</option>
+            {%- endfor -%}
+        </select>
+        public_ip:
+        <select class="public_ip_selector">
+            <option>choose ip</option>
+        </select>
+        category:
+        <select class="category_selector">
+            <option>choose category</option>
+        </select>
+        
+    </div>
+    <div id="loading" style="width:66px;height:66px;position:absolute;top:50%;left:50%;">
+        　　<img alt="加载中..." src="../loading.gif" />
+    </div>
+
+    <div id="VnodeStatus_DIV"></div>
+    <div id="Result_DIV"></div>
+</body>
+
+
+</html>

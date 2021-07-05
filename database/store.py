@@ -1,16 +1,24 @@
 
+from multiprocessing import Lock
 import common.config as cconfig
 import pymysql.cursors
-
+import time
+import threading
 
 class Store(str):
     def __init__(self, database=None):
-        print('当前数据库:', database)
+        self.last_connect_time = int(time.time())
+        self.lock = threading.Lock()
+        
+        print('当前数据库:{0},last_connect_time:{1}'.format(database,self.last_connect_time))
         self.tablecol = {
             "p2p": 'uniq_hash,msg_hash,msg_size,send_timestamp,src_ip,is_root,is_broadcast,recv_msg_cnt,recv_hash_cnt,vhost_recv_cnt,bypulled_cnt,packet_size,max_hop,avg_hop,max_delay,avg_delay,hop_num,recv_delay',
             "metrics_timer": 'send_timestamp,public_ip,category,tag,count,max_time,min_time,avg_time',
             "metrics_counter": 'send_timestamp,public_ip,category,tag,count,value',
-            "metrics_timer": 'send_timestamp,public_ip,category,tag,count,max_flow,min_flow,sum_flow,avg_flow,tps_flow,tps'
+            "metrics_timer": 'send_timestamp,public_ip,category,tag,count,max_flow,min_flow,sum_flow,avg_flow,tps_flow,tps',
+            "ips_table":'public_ips',
+            "tags_table":'category,tag,type',
+            "vnode_status":'timestamp,public_ip,rec,zec,auditor,validator,archive,edge',
         }
         self.db = pymysql.connect(**{
             'host': cconfig.DEFAULT_MYSQL_CONFIG['DB_HOST'],
@@ -64,14 +72,14 @@ class Store(str):
             create_metrics_timer_sql = '\
             CREATE TABLE metrics_timer(\
                 send_timestamp INT(10) DEFAULT 0,\
-                public_ip VARCHAR(20) DEFAULT "",\
+                public_ip VARCHAR(40) DEFAULT "",\
                 category VARCHAR(30) DEFAULT "",\
                 tag VARCHAR(100) DEFAULT "",\
-                count INT(10) DEFAULT 0,\
-                max_time INT(10) DEFAULT 0,\
-                min_time INT(10) DEFAULT 0,\
-                avg_time INT(10) DEFAULT 0,\
-                INDEX(send_timestamp,public_ip)\
+                count BIGINT(20) DEFAULT 0,\
+                max_time BIGINT(20) DEFAULT 0,\
+                min_time BIGINT(20) DEFAULT 0,\
+                avg_time BIGINT(20) DEFAULT 0,\
+                INDEX(category,tag,public_ip,send_timestamp)\
             )ENGINE = InnoDB DEFAULT CHARSET = utf8;'
             self.cursor.execute(create_metrics_timer_sql)
 
@@ -79,12 +87,12 @@ class Store(str):
             create_metrics_counter_sql = '\
             CREATE TABLE metrics_counter(\
                 send_timestamp INT(10) DEFAULT 0,\
-                public_ip VARCHAR(20) DEFAULT "",\
+                public_ip VARCHAR(40) DEFAULT "",\
                 category VARCHAR(30) DEFAULT "",\
                 tag VARCHAR(100) DEFAULT "",\
-                count INT(10) DEFAULT 0,\
-                value INT(10) DEFAULT 0,\
-                INDEX(send_timestamp,public_ip)\
+                count BIGINT(20) DEFAULT 0,\
+                value BIGINT(20) DEFAULT 0,\
+                INDEX(category,tag,public_ip,send_timestamp)\
             )ENGINE = InnoDB DEFAULT CHARSET = utf8;'
             self.cursor.execute(create_metrics_counter_sql)
 
@@ -92,19 +100,64 @@ class Store(str):
             create_metrics_flow_sql = '\
             CREATE TABLE metrics_flow(\
                 send_timestamp INT(10) DEFAULT 0,\
-                public_ip VARCHAR(20) DEFAULT "",\
+                public_ip VARCHAR(40) DEFAULT "",\
                 category VARCHAR(30) DEFAULT "",\
                 tag VARCHAR(100) DEFAULT "",\
-                count INT(10) DEFAULT 0,\
-                max_flow INT(10) DEFAULT 0,\
-                min_flow INT(10) DEFAULT 0,\
-                sum_flow INT(10) DEFAULT 0,\
-                avg_flow INT(10) DEFAULT 0,\
-                tps_flow INT(10) DEFAULT 0,\
+                count BIGINT(20) DEFAULT 0,\
+                max_flow BIGINT(20) DEFAULT 0,\
+                min_flow BIGINT(20) DEFAULT 0,\
+                sum_flow BIGINT(20) DEFAULT 0,\
+                avg_flow BIGINT(20) DEFAULT 0,\
+                tps_flow BIGINT(20) DEFAULT 0,\
                 tps DOUBLE DEFAULT 0.00,\
-                INDEX(send_timestamp,public_ip)\
+                INDEX(category,tag,public_ip,send_timestamp)\
             )ENGINE = InnoDB DEFAULT CHARSET = utf8;'
             self.cursor.execute(create_metrics_flow_sql)
+
+            # ips_table
+            create_ips_table_sql = '\
+            CREATE TABLE ips_table(public_ips VARCHAR(40) DEFAULT "" PRIMARY KEY )ENGINE = InnoDB DEFAULT CHARSET=utf8;'
+            self.cursor.execute(create_ips_table_sql)
+
+            # tags_table
+            create_tags_table_sql = '\
+            CREATE TABLE tags_table (\
+                category VARCHAR ( 30 ) DEFAULT "" NOT NULL,\
+                tag VARCHAR ( 100 ) DEFAULT "" NOT NULL,\
+                type VARCHAR ( 30 ) DEFAULT "" NOT NULL,\
+                UNIQUE(type,category,tag)\
+            ) ENGINE = INNODB DEFAULT CHARSET = utf8;'
+            self.cursor.execute(create_tags_table_sql)
+
+            # vnode_status
+            create_vnode_status_table_sql = '\
+            CREATE TABLE vnode_status (\
+                timestamp INT ( 10 ) DEFAULT 0 NOT NULL,\
+                public_ip VARCHAR ( 40 ) DEFAULT "" NOT NULL,\
+                rec INT ( 10 ) DEFAULT 0 NOT NULL,\
+                zec INT ( 10 ) DEFAULT 0 NOT NULL,\
+                auditor INT ( 10 ) DEFAULT 0 NOT NULL,\
+                validator INT ( 10 ) DEFAULT 0 NOT NULL,\
+                archive INT ( 10 ) DEFAULT 0 NOT NULL,\
+                edge INT ( 10 ) DEFAULT 0 NOT NULL,\
+            INDEX ( timestamp, public_ip ) \
+            ) ENGINE = INNODB DEFAULT CHARSET = utf8;'
+            self.cursor.execute(create_vnode_status_table_sql)
+
+            # xsync_interval
+            create_xsync_interval_table_sql = '\
+            CREATE TABLE xsync_interval (\
+                table_address VARCHAR ( 100 ) DEFAULT "",\
+                sync_mod VARCHAR ( 20 ) DEFAULT "",\
+                send_timestamp INT ( 10 ) DEFAULT 0,\
+                public_ip VARCHAR ( 40 ) DEFAULT "",\
+                self_min BIGINT ( 20 ) DEFAULT 0,\
+                self_max BIGINT ( 20 ) DEFAULT 0,\
+                peer_min BIGINT ( 20 ) DEFAULT 0,\
+                peer_max BIGINT ( 20 ) DEFAULT 0,\
+            INDEX ( table_address, sync_mod, send_timestamp ) \
+            ) ENGINE = INNODB DEFAULT CHARSET = utf8;'
+            self.cursor.execute(create_xsync_interval_table_sql)
 
 
             (self.cursor.close(), self.db.close(), self.__init__(database))
@@ -121,10 +174,38 @@ class Store(str):
             'cursorclass': pymysql.cursors.DictCursor,
         })
         self.cursor = self.db.cursor()
+        self.databasename = database
+
+    def check_timeout(self):
+        now_time = int(time.time())
+        # print("now_time:{0}, last_connect_time:{1}".format(now_time,self.last_connect_time))
+        if(now_time > self.last_connect_time and now_time-self.last_connect_time > 6*3600):
+            self.reconnect()
+        else:
+            self.last_connect_time = now_time
+        return
+
+    def reconnect(self):
+        self.cursor.close()
+        self.db.close()
+        self.db = pymysql.connect(**{
+            'host': cconfig.DEFAULT_MYSQL_CONFIG['DB_HOST'],
+            'port': cconfig.DEFAULT_MYSQL_CONFIG['DB_PORT'],
+            'user': cconfig.DEFAULT_MYSQL_CONFIG['DB_USER'],
+            'passwd': cconfig.DEFAULT_MYSQL_CONFIG['DB_PASS'],
+            'db': self.databasename,
+            'charset': 'UTF8MB4',
+            'autocommit': True,
+            'cursorclass': pymysql.cursors.DictCursor,
+        })
+        self.cursor = self.db.cursor()
+        return
 
     def store_insert(self, table, item: dict):
         if not item:
             return ValueError('item error')
+
+        self.check_timeout()
 
         size = len(item)
         keys = item.keys()
@@ -134,3 +215,28 @@ class Store(str):
         print(sql)
         last_id = self.cursor.execute(sql, [item[key] for key in keys])
         return last_id
+    
+    def store_ignore_insert(self,table,item:dict):
+        if not item:
+            return ValueError('item error')
+        
+        self.check_timeout()
+
+        size = len(item)
+        keys = item.keys()
+        safe_keys = ['`%s`' % k for k in keys]
+        sql = 'INSERT IGNORE INTO `%s`(%s) VALUES(%s)' % (
+            table, ','.join(safe_keys), '%s' + ',%s' * (size - 1))
+        print(sql)
+        last_id = self.cursor.execute(sql, [item[key] for key in keys])
+        return last_id
+
+    def query(self,sql):
+
+        self.check_timeout()
+        
+        print(sql)
+        self.lock.acquire()
+        self.cursor.execute(sql)
+        self.lock.release()
+        return self.cursor.fetchall()

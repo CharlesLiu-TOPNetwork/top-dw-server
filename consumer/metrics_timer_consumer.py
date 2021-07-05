@@ -78,9 +78,7 @@ class MetricsTimerConsumer(object):
                 slog.warn('catch exception:{0}'.format(e))
         return
 
-    # focus on packet_info(drop_rate,hop_num,timing)
     def metrics_timer_handle(self, packet):
-        now = int(time.time() * 1000)
         slog.info(packet)
         '''
         {
@@ -110,5 +108,12 @@ class MetricsTimerConsumer(object):
         item['avg_time'] = packet.get('avg_time')
 
         self.mysql_db.insert_into_db(db, "metrics_timer", item)
+
+        
+        tags = {}
+        tags['category'] = packet.get('category')
+        tags['tag'] = packet.get('tag')
+        tags['type'] = "timer"
+        self.mysql_db.insert_ingore_into_db(db, "tags_table", tags)
 
         return True

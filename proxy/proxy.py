@@ -32,7 +32,7 @@ def alarm_report():
         payload = json.loads(request.data)
     else:
         payload = request.get_json()
-    print(payload)
+    # print(payload)
     ret = {'status':''}
     status_ret = {
             0:'OK',

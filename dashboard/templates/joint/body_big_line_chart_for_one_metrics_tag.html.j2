@@ -1,0 +1,113 @@
+<input id="selectall_{{ name }}" type="button" style="float: left;margin:10% 10%;position:relative;" value="全不选" flag="1"/>
+<div class= "echart_big_div" id="{{ name }}" ></div>
+<script type="text/javascript">
+    var myChart_{{ name }} = echarts.init(document.getElementById('{{ name }}'));
+    var option_{{ name }} = {
+        title: {
+            text: '{{ name }}',
+            textStyle:{
+                width: 1200,
+                overflow: "break",
+            },
+        },
+        toolbox:{
+            show: true,
+            feature: {
+                dataZoom:{
+                    yAxisIndex: "none"
+                },
+                dataView: {
+                    readOnly: true
+                },
+            },
+            right:'10%'
+        },
+        tooltip:{
+            trigger:'axis',
+            position: [20, 80],
+            formatter: function(params){
+                let astr = '<div>'+params[0].axisValue+'</div>'
+                params.forEach(ele => {
+                const data = ele.data
+                if(data){
+                    astr += `
+                        <div style="display: block;height:20px;width:50%;float:left;">
+                        <i style="width: 10px;height: 10px;display: inline-block;background: ${ele.color};border-radius: 10px;"></i>
+                        <span>${ele.seriesName}: ${data}</span>
+                        </div>
+                    `
+                    }
+                }
+                )
+                const b = '<div style="width: 600px;">' + astr + '<div>'
+                return b
+            }
+        },
+        dataZoom: [{
+                    type: 'slider',
+                    show: true, //flase直接隐藏图形
+                    xAxisIndex: [0],
+                    left: '9%', //滚动条靠左侧的百分比
+                    bottom: '5%',
+                    start: 0,//滚动条的起始位置
+                    end: 100 //滚动条的截止位置（按比例分割你的柱状图x轴长度）
+                }],
+        legend:{
+            data:[
+                {%- for item in data_list -%}
+                    '{{ item }}',
+                {%- endfor -%}
+            ],
+            top:"10%",
+        },
+        grid:{
+            left: "10%",
+            right: "10%",
+            bottom: "15%",
+            top: "40%",
+        },
+        xAxis: {
+            name:"发送时间",
+            type: 'category',
+            data:
+            [
+                {%- for item in x_list -%}
+                    '{{ item }}',
+                {%- endfor -%}
+            ]
+        },
+        yAxis: {
+            type: 'value'
+        },
+        series: [
+            {% for k,v in data_list.items() %}
+            {
+                type: 'line',
+                name: '{{ k }}',
+                data:  {{ v }},
+            },
+            {% endfor %}
+        ]
+    };
+    option_{{ name }} && myChart_{{ name }}.setOption(option_{{ name }});
+
+    var selectArr = myChart_{{ name }}.getOption().legend[0].data;
+    $('#selectall_{{ name }}').click(function () {
+        var flag = $(this).attr('flag');
+        if (flag == 1) {
+            var val = false;
+            $(this).attr('flag', 0);
+            $(this).val('全选中');
+        } else {
+            var val = true;
+            $(this).attr('flag', 1);
+            $(this).val('全不选');
+        }
+        var obj = {};
+        for (var key in selectArr) {
+            obj[selectArr[key]] = val;
+        }
+        option_{{ name }}.legend.selected = obj;
+        myChart_{{ name }}.setOption(option_{{ name }});
+    });
+</script>

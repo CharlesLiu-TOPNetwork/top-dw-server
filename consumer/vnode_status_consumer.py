@@ -10,9 +10,9 @@ from database.dispatch import MultiDB
 from common.slogging import slog
 
 
-class MetricsCounterConsumer(object):
+class VnodeStatusConsumer(object):
     def __init__(self, q, queue_key_list, alarm_env='test'):
-        slog.info("MetricsCounterConsumer init. pid:{0} paraent:{1} queue_key:{2}".format(
+        slog.info("VnodeStatusConsumer init. pid:{0} paraent:{1} queue_key:{2}".format(
             os.getpid(), os.getppid(), json.dumps(queue_key_list)))
 
         self.alarm_env_ = alarm_env
@@ -24,13 +24,15 @@ class MetricsCounterConsumer(object):
         self.queue_key_list_ = queue_key_list
 
         self.mysql_db = MultiDB()
-        self.counter_metrics_template = {
-            "send_timestamp": 0,
+        self.vnode_status_template = {
+            "timestamp": 0,
             "public_ip": "",
-            "category": "",
-            "tag": "",
-            "count": 0,
-            "value": 0
+            "rec":0,
+            "zec":0,
+            "auditor":0,
+            "validator":0,
+            "archive":0,
+            "edge":0
         }
 
         return
@@ -52,9 +54,9 @@ class MetricsCounterConsumer(object):
             for alarm_payload in alarm_payload_list:
                 alarm_type = alarm_payload.get('alarm_type')
                 slog.info(alarm_payload)
-                if alarm_type == 'metrics_counter':
+                if alarm_type == 'vnode_status':
                     slog.info(alarm_payload.get('packet'))
-                    self.metrics_counter_handle(alarm_payload.get('packet'))
+                    self.vnode_status_handle(alarm_payload.get('packet'))
                 else:
                     slog.warn('invalid alarm_type:{0}'.format(alarm_type))
         return
@@ -68,8 +70,8 @@ class MetricsCounterConsumer(object):
                     self.queue_key_list_, self.consume_step_)  # return dict or None
                 for alarm_payload in alarm_payload_list:
                     alarm_type = alarm_payload.get('alarm_type')
-                    if alarm_type == 'metrics_counter':
-                        self.metrics_counter_handle(
+                    if alarm_type == 'vnode_status':
+                        self.vnode_status_handle(
                             alarm_payload.get('packet'))
                     else:
                         slog.warn('invalid alarm_type:{0}'.format(alarm_type))
@@ -77,42 +79,39 @@ class MetricsCounterConsumer(object):
                 slog.warn('catch exception:{0}'.format(e))
         return
 
-    def metrics_counter_handle(self, packet):
+    def vnode_status_handle(self, packet):
         slog.info(packet)
         '''
         {
-            'alarm_type': 'metrics_counter', 
-            'packet': {
-                'env': 'test2', 
-                'public_ip': '192.168.181.128', 
-                'send_timestamp': 1624513771, 
-                'category': 'dataobject', 
-                'tag': 'xreceiptid_pair_t', 
-                'count': 960, 
-                'value': 2
+            "alarm_type": "vnode_status",
+            "packet": {
+                "timestamp": 1625108040,
+                "env": "test_database_name",
+                "public_ip": "192.168.181.128",
+                "rec": 6,
+                "zec": 0,
+                "auditor": 4,
+                "validator": 0,
+                "archive": 2,
+                "edge": 1
             }
         }
         '''
         db = packet.get('env')
-        item = copy.deepcopy(self.counter_metrics_template)
-        item['send_timestamp'] = packet.get('send_timestamp')
+        item = copy.deepcopy(self.vnode_status_template)
+        item['timestamp'] = packet.get('timestamp')
         item['public_ip'] = packet.get('public_ip')
-        item['category'] = packet.get('category')
-        item['tag'] = packet.get('tag')
-        item['count'] = packet.get('count')
-        item['value'] = packet.get('value')
-
-        self.mysql_db.insert_into_db(db, "metrics_counter", item)
+        item['rec'] = packet.get('rec')
+        item['zec'] = packet.get('zec')
+        item['auditor'] = packet.get('auditor')
+        item['validator'] = packet.get('validator')
+        item['archive'] = packet.get('archive')
+        item['edge'] = packet.get('edge')
+        
+        self.mysql_db.insert_into_db(db, "vnode_status", item)
 
         ips = {}
         ips['public_ips'] = packet.get('public_ip')
         self.mysql_db.insert_ingore_into_db(db, "ips_table", ips)
-
-        tags = {}
-        tags['category'] = packet.get('category')
-        tags['tag'] = packet.get('tag')
-        tags['type'] = "counter"
-        self.mysql_db.insert_ingore_into_db(db, "tags_table", tags)
-
 
         return True

@@ -10,9 +10,9 @@ from database.dispatch import MultiDB
 from common.slogging import slog
 
 
-class MetricsCounterConsumer(object):
+class XsyncIntervalConsumer(object):
     def __init__(self, q, queue_key_list, alarm_env='test'):
-        slog.info("MetricsCounterConsumer init. pid:{0} paraent:{1} queue_key:{2}".format(
+        slog.info("XsyncIntervalConsumer init. pid:{0} paraent:{1} queue_key:{2}".format(
             os.getpid(), os.getppid(), json.dumps(queue_key_list)))
 
         self.alarm_env_ = alarm_env
@@ -24,13 +24,15 @@ class MetricsCounterConsumer(object):
         self.queue_key_list_ = queue_key_list
 
         self.mysql_db = MultiDB()
-        self.counter_metrics_template = {
+        self.xsync_interval_template = {
+            "table_address": "",
+            "sync_mod": "",
             "send_timestamp": 0,
             "public_ip": "",
-            "category": "",
-            "tag": "",
-            "count": 0,
-            "value": 0
+            "self_min": 0,
+            "self_max": 0,
+            "peer_min": 0,
+            "peer_max": 0,
         }
 
         return
@@ -52,9 +54,9 @@ class MetricsCounterConsumer(object):
             for alarm_payload in alarm_payload_list:
                 alarm_type = alarm_payload.get('alarm_type')
                 slog.info(alarm_payload)
-                if alarm_type == 'metrics_counter':
+                if alarm_type == 'xsync_interval':
                     slog.info(alarm_payload.get('packet'))
-                    self.metrics_counter_handle(alarm_payload.get('packet'))
+                    self.xsync_interval_handle(alarm_payload.get('packet'))
                 else:
                     slog.warn('invalid alarm_type:{0}'.format(alarm_type))
         return
@@ -68,8 +70,8 @@ class MetricsCounterConsumer(object):
                     self.queue_key_list_, self.consume_step_)  # return dict or None
                 for alarm_payload in alarm_payload_list:
                     alarm_type = alarm_payload.get('alarm_type')
-                    if alarm_type == 'metrics_counter':
-                        self.metrics_counter_handle(
+                    if alarm_type == 'xsync_interval':
+                        self.xsync_interval_handle(
                             alarm_payload.get('packet'))
                     else:
                         slog.warn('invalid alarm_type:{0}'.format(alarm_type))
@@ -77,42 +79,35 @@ class MetricsCounterConsumer(object):
                 slog.warn('catch exception:{0}'.format(e))
         return
 
-    def metrics_counter_handle(self, packet):
+    def xsync_interval_handle(self, packet):
         slog.info(packet)
         '''
-        {
-            'alarm_type': 'metrics_counter', 
-            'packet': {
-                'env': 'test2', 
-                'public_ip': '192.168.181.128', 
-                'send_timestamp': 1624513771, 
-                'category': 'dataobject', 
-                'tag': 'xreceiptid_pair_t', 
-                'count': 960, 
-                'value': 2
+        {"alarm_type": "xsync_interval",
+            "packet": {
+                "env": "test_database_name",
+                "public_ip": "192.168.181.128",
+                "sync_mod": "full",
+                "table_address": "Ta0000gRD2qVpp2S7UpjAsznRiRhbE1qNnhMbEDp@192",
+                "send_timestamp": 1625222100,
+                "self_min": 0,
+                "self_max": 0,
+                "peer_min": 0,
+                "peer_max": 0
             }
         }
         '''
         db = packet.get('env')
-        item = copy.deepcopy(self.counter_metrics_template)
+        item = copy.deepcopy(self.xsync_interval_template)
+
+        item['table_address'] = packet.get('table_address')
+        item['sync_mod'] = packet.get('sync_mod')
         item['send_timestamp'] = packet.get('send_timestamp')
         item['public_ip'] = packet.get('public_ip')
-        item['category'] = packet.get('category')
-        item['tag'] = packet.get('tag')
-        item['count'] = packet.get('count')
-        item['value'] = packet.get('value')
-
-        self.mysql_db.insert_into_db(db, "metrics_counter", item)
-
-        ips = {}
-        ips['public_ips'] = packet.get('public_ip')
-        self.mysql_db.insert_ingore_into_db(db, "ips_table", ips)
-
-        tags = {}
-        tags['category'] = packet.get('category')
-        tags['tag'] = packet.get('tag')
-        tags['type'] = "counter"
-        self.mysql_db.insert_ingore_into_db(db, "tags_table", tags)
-
+        item['self_min'] = packet.get('self_min')
+        item['self_max'] = packet.get('self_max')
+        item['peer_min'] = packet.get('peer_min')
+        item['peer_max'] = packet.get('peer_max')
+        
+        self.mysql_db.insert_into_db(db, "xsync_interval", item)
 
         return True

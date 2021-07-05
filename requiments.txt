@@ -1,3 +1,5 @@
 PyMySQL==0.9.3
 Flask==1.1.1
 redis==3.3.11
+Flask-HTTPAuth==3.3.0
+Werkzeug==0.16.0

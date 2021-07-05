@@ -33,6 +33,16 @@ class RedisQueue(object):
             self.myredis.sadd(self.all_queue_keys,qkey_perf)
             self.all_queue_keys_set.add(qkey_perf)
         
+        # vnode_status
+        qkey_perf = '{0}:vnode_status'.format(self.queue_key_base)
+        self.myredis.sadd(self.all_queue_keys,qkey_perf)
+        self.all_queue_keys_set.add(qkey_perf)
+
+        # xsync_interval
+        qkey_perf = '{0}:xsync_interval'.format(self.queue_key_base)
+        self.myredis.sadd(self.all_queue_keys,qkey_perf)
+        self.all_queue_keys_set.add(qkey_perf)
+        
         return
     
     def get_all_queue_keys(self):
@@ -45,6 +55,8 @@ class RedisQueue(object):
         msg_hash = None
         if alarm_type == 'p2p_gossip':
             msg_hash = int(list(alarm_item.get('packet').get('content').keys())[0]) 
+        elif alarm_type == 'vnode_status' or alarm_type == 'xsync_interval':
+            return '{0}:{1}'.format(self.queue_key_base,alarm_type)
         else:
             msg_hash = random.randint(0,10000)
 
@@ -54,7 +66,7 @@ class RedisQueue(object):
             self.myredis.sadd(self.all_queue_keys, qkey)
             self.all_queue_keys_set.add(qkey)
 
-        slog.debug('get qkey:{0}'.format(qkey))
+        # slog.debug('get qkey:{0}'.format(qkey))
         return qkey 
 
     def qsize(self, queue_key_list):
@@ -80,8 +92,8 @@ class RedisQueue(object):
         # item is dict, serialize to str
         # TODO(smaug)
         size = self.qsize([qkey])
-        if size >= 500000:
-            slog.warn("queue_key:{0} size {1} beyond 500000".format(qkey, size))
+        if size >= 1000000:
+            slog.warn("queue_key:{0} size {1} beyond 1000000".format(qkey, size))
             return
         self.myredis.lpush(qkey, json.dumps(item))
         slog.debug("put_queue alarm:{0} in queue {1}, now size is {2}".format(json.dumps(item), qkey, self.qsize([qkey])))
