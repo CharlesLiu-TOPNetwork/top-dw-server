@@ -37,7 +37,7 @@
             xsync_html_obj = $.ajax({
                 url : query_sync_path,
                 async:true,
-                before:function(){
+                beforeSend:function(){
                     $("#loading").show();
                     $("#Result_DIV").animate({ opacity: .4 }, 500, function () { })
                 },
