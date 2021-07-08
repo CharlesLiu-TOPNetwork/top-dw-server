@@ -274,7 +274,7 @@ def query_counter(database, category, tag):
     for _key, data_list in data_lists.items():
         res = res + render_template('joint/body_div_line.html', name=_key)
         res = res + render_template('joint/body_big_line_chart_for_one_metrics_tag.html.j2',
-                                    name=_key, data_list=format_data_list_to_str(data_list), x_list=format_timestamp_list(x_list))
+                                    name=_key, data_list=format_data_list_to_str(data_list), x_list=format_timestamp_list(x_list), append_info = '[' + database + ']' + category + '_' + tag)
     return res
 
 # ![function] used by other apis, return an [category - tag - type:flow]'s all nodes' metrics data (one full picture)
@@ -329,7 +329,7 @@ def query_flow(database, category, tag):
     for _key, data_list in data_lists.items():
         res = res + render_template('joint/body_div_line.html', name=_key)
         res = res + render_template('joint/body_big_line_chart_for_one_metrics_tag.html.j2',
-                                    name=_key, data_list=format_data_list_to_str(data_list), x_list=format_timestamp_list(x_list))
+                                    name=_key, data_list=format_data_list_to_str(data_list), x_list=format_timestamp_list(x_list), append_info = '[' + database + ']' + category + '_' + tag)
     return res
 
 # ![function] used by other apis, return an [category - tag - type:timer]'s all nodes' metrics data (one full picture)
@@ -378,7 +378,7 @@ def query_timer(database, category, tag):
     for _key, data_list in data_lists.items():
         res = res + render_template('joint/body_div_line.html', name=_key)
         res = res + render_template('joint/body_big_line_chart_for_one_metrics_tag.html.j2',
-                                    name=_key, data_list=format_data_list_to_str(data_list), x_list=format_timestamp_list(x_list))
+                                    name=_key, data_list=format_data_list_to_str(data_list), x_list=format_timestamp_list(x_list), append_info = '[' + database + ']' + category + '_' + tag)
     return res
 
 # ![api] return an [category - tag - type]'s all nodes' metrics data (one full picture)
@@ -430,7 +430,7 @@ def query_ip_category_metrics():
     res = render_template('joint/body_div_line.html', name = "metrics_counter")
     for _tag,_value in res_item.items():
         res = res + render_template('joint/body_small_line_chart_for_one_metrics_tag_one_ip.html.j2', name=_tag,
-                                    value_series=_value['value_series'], list_x = format_timestamp_list(_value['list_x']))
+                                    value_series=_value['value_series'], list_x=format_timestamp_list(_value['list_x']), append_info = '[' + database + ']' + category + '_' + ip)
 
 
     res = res + render_template('joint/body_div_line.html', name = "metrics_timer")
@@ -459,7 +459,7 @@ def query_ip_category_metrics():
 
     for _tag,_value in res_item.items():
         res = res + render_template('joint/body_small_line_chart_for_one_metrics_tag_one_ip.html.j2', name=_tag,
-                                    value_series=_value['value_series'], list_x = format_timestamp_list(_value['list_x']))
+                                    value_series=_value['value_series'], list_x=format_timestamp_list(_value['list_x']), append_info = '[' + database + ']' + category + '_' + ip)
     
     res = res + render_template('joint/body_div_line.html', name = "metrics_flow")
     # metrics_flow:
@@ -491,7 +491,7 @@ def query_ip_category_metrics():
 
     for _tag,_value in res_item.items():
         res = res + render_template('joint/body_small_line_chart_for_one_metrics_tag_one_ip.html.j2', name=_tag,
-                                    value_series=_value['value_series'], list_x = format_timestamp_list(_value['list_x']))
+                                    value_series=_value['value_series'], list_x = format_timestamp_list(_value['list_x']), append_info = '[' + database + ']' + category + '_' + ip)
 
 
     return res
@@ -526,7 +526,7 @@ def query_ip_category_tag_metrics_counter():
     # res = ""
     # for _tag,_value in res_item.items():
     return render_template('joint/body_small_line_chart_for_one_metrics_tag_one_ip.html.j2', name=tag,
-                                    value_series=res_item['value_series'], list_x = format_timestamp_list(res_item['list_x']))
+                                    value_series=res_item['value_series'], list_x = format_timestamp_list(res_item['list_x']), append_info = '[' + database + ']' + category + '_' + ip)
 
 
     # res = res + render_template('joint/body_div_line.html', name = "metrics_timer")
@@ -581,7 +581,33 @@ def format_sync_data_list_to_str(ip_list:list,input_map:dict):
     return res_map
 
 
-database_ignore_list = ['information_schema', 'empty', 'None', 'mysql', 'performance_schema', 'topargus', 'topargusdemo']
+#![help_tools] convert a [list] into a [str] which skip the None data
+def format_cache_hit_data_list_to_str(tag_list: list, input_map: dict):
+    res_map = {}
+    for ts, item in input_map.items():
+        format_ts = time.strftime(format_regex, time.localtime(ts))
+        res_map[format_ts] = {
+            'hit': "",
+            'miss': "",
+            'sum': "",
+        }
+        for _tag in tag_list:
+            if _tag not in item:
+                res_map[format_ts]['hit'] += ","
+                res_map[format_ts]['miss'] += ","
+                res_map[format_ts]['sum'] += ","
+            else:
+                res_map[format_ts]['hit'] += str(input_map[ts][_tag][1])+","
+                res_map[format_ts]['miss'] += str(input_map[ts][_tag][0]-input_map[ts][_tag][1])+","
+                # {name:'cat2',value:260},
+                if input_map[ts][_tag][0]!=0:
+                    res_map[format_ts]['sum'] += "{name:'"+_tag + "',value:" + str(input_map[ts][_tag][0]) +"},"
+                else:
+                    res_map[format_ts]['sum'] += "{name:'"+_tag + "',value:null},"
+
+    return res_map
+
+database_ignore_list = ['information_schema', 'mysql', 'performance_schema', 'empty', 'None','test_database_name']
 
 # ![page] query one ip , return all metrics data
 @app.route('/ip_metrics',methods=['GET'])
@@ -621,6 +647,107 @@ def xsync():
         if item['Database'] not in database_ignore_list:
             res_list.append(item['Database'])
     return render_template('query_center/special_packet_xsync_interval.html.j2',database_list = res_list)
+
+
+
+# ![page] query_blockstore cache rate
+@app.route('/xblockstore',methods=['GET'])
+@app.route('/xblockstore/',methods=['GET'])
+def xblockstore():
+    query_sql = 'SHOW DATABASES;'
+    query_items = myquery.query_database('empty',query_sql)
+    res_list = []
+    for item in query_items:
+        if item['Database'] not in database_ignore_list:
+            res_list.append(item['Database'])
+    return render_template('query_center/special_packet_xblockstore_cache.html.j2',database_list = res_list)
+
+# ![page][center]
+@app.route('/center',methods=['GET'])
+@app.route('/center/',methods=['GET'])
+def center_page():
+    return render_template('query_center/center.html')
+
+# ![api] query blockstore && statestore cache hit 
+@app.route('/query_state_block_store_cache_hit_rate',methods=['GET'])
+@app.route('/query_state_block_store_cache_hit_rate/',methods=['GET'])
+def query_store_cache_hit():
+    database = request.args.get('database') or None
+    public_ip = request.args.get('public_ip') or None
+    store_type = request.args.get('store_type') or None
+
+    res_page = ""
+    query_sql = 'SELECT send_timestamp, tag, count, value FROM `metrics_counter` WHERE category = "{0}" AND tag REGEXP "access_from*" AND public_ip = "{1}";'.format(
+        store_type, public_ip)
+    query_items = myquery.query_database(database,query_sql)
+    if not query_items:
+        res_page += "None data with "+store_type
+    else:
+        res_map = {}
+        tag_list = []
+        ts_list = []
+        for item in query_items:
+            ts = item['send_timestamp']
+            tag = item['tag'][12:] # access_from
+            if ts not in res_map:
+                res_map[ts]={}
+            if ts not in ts_list:
+                ts_list.append(ts)
+            if tag not in res_map[ts]:
+                res_map[ts][tag] = []
+            if tag not in tag_list:
+                tag_list.append(tag)
+            res_map[ts][tag].append(item['count'])
+            res_map[ts][tag].append(item['value'])
+        ts_list.sort()
+        res_page += render_template('joint/body_big_line_chart_for_cache_rate.html.j2',name = public_ip + " "+ store_type,ts_list = format_timestamp_list(ts_list),tag_list = tag_list,res_map = format_cache_hit_data_list_to_str(tag_list,res_map))
+
+    return res_page
+
+
+# ![api] query xblockstore [hit-miss]
+@app.route('/query_xblockstore_hit',methods=['GET'])
+@app.route('/query_xblockstore_hit/',methods=['GET'])
+def query_xblockstore_hit():
+    # database = request.args.get('database') or None
+    # public_ip = request.args.get('public_ip') or None
+    # category = "blockstore"
+    # query_tags_sql = 'SELECT DISTINCT tag FROM tags_table where category = "' + category + '" and type = "counter" ;'
+    # query_items = myquery.query_database(database,query_tags_sql)
+    # tag_list = [l['tag'] for l in query_items]
+    # print(tag_list)
+
+    # res_page = ""
+    # query_sql = 'SELECT send_timestamp, tag, count, value FROM `metrics_counter` WHERE category = "blockstore" AND tag REGEXP "access_from*" AND public_ip = "{0}";'.format(public_ip)
+    # query_items = myquery.query_database(database,query_sql)
+    # if not query_items:
+    #     res_page += "None data with blockstore"
+    # else:
+    #     res_map = {}
+    #     tag_list = []
+    #     ts_list = []
+    #     for item in query_items:
+    #         ts = item['send_timestamp']
+    #         tag = item['tag']
+    #         if ts not in res_map:
+    #             res_map[ts]={}
+    #         if ts not in ts_list:
+    #             ts_list.append(ts)
+    #         if tag not in res_map[ts]:
+    #             res_map[ts][tag] = []
+    #         if tag not in tag_list:
+    #             tag_list.append(tag)
+    #         res_map[ts][tag].append(item['count'])
+    #         res_map[ts][tag].append(item['value'])
+    #     ts_list.sort()
+    #     res_page += render_template('joint/body_big_line_chart_for_cache_rate.html.j2',name = public_ip + " blockstore",ts_list = format_timestamp_list(ts_list),tag_list = tag_list,res_map = format_cache_hit_data_list_to_str(tag_list,res_map))
+
+
+    # print(res_map)
+
+    return render_template('tmp_blockstore.html')
+    return res_page
+
 
 # ![api] query xsync_interval
 @app.route('/query_xsync_interval',methods=['GET'])
@@ -713,7 +840,7 @@ def query_ip_vnode_status():
         res_item['edge'].append(item['edge'])
 
     res = render_template('joint/body_center_line_chart_for_vnode_status.html.j2',
-                          name='vnode_status', value_series=res_item, list_x=format_timestamp_list(list_x))
+                          name='vnode_status', value_series=res_item, list_x=format_timestamp_list(list_x),append_info = public_ip)
     return res
 
 # ![api] query one database ips

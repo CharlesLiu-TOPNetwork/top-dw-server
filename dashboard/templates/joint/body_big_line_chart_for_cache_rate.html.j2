@@ -1,0 +1,139 @@
+<div class="echart_big_wide_div" id="{{ name }}"></div>
+<script type="text/javascript">
+    var myChart_ = echarts.init(document.getElementById('{{ name }}'));
+    // 指定图表的配置项和数据
+    var all_option_ = {
+        baseOption:{
+            timeline: {
+                data: [
+                    {%- for _ts in ts_list -%}
+                    '{{_ts}}',
+                    {%- endfor -%}
+                ],
+                axisType: 'category',
+                autoPlay: true,
+                playInterval: 2000,
+                left: '0%',
+                right: '20%',
+            },
+            title: {
+                subtext: 'from {{ name }} ',
+            },
+            tooltip: {
+                {# trigger: 'axis',
+                axisPointer: {            // 坐标轴指示器，坐标轴触发有效
+                    type: 'shadow'        // 默认为直线，可选为：'line' | 'shadow'
+                }, #}
+                {# formatter: function (params) {
+                    if (params.constructor.toString().indexOf("Array")>-1)
+                    {
+                        var min = params[0];
+                        var max = params[1];
+                        var min_value = params[0].value
+                        var max_value = min_value + params[1].value
+                        var other_max_value = params[2].value+params[3].value
+                        return max.name + '<br/>' + max.seriesName + ' : ' + min_value + ' - ' + max_value + '<br/>' + params[3].seriesName + ' : ' + params[2].value + ' - ' + other_max_value;
+                    }
+                    // timeline:
+                    return params.name;
+                } #}
+            },
+            grid: {
+                top: '30%',
+                left: '0%',
+                right: '20%',
+                bottom: '12%',
+                containLabel: true,
+                tooltip:{
+                    trigger:'axis',
+                    axisPointer:{
+                        type:'shadow',
+
+                    }
+                }
+            },
+            dataZoom: [{
+                type: 'slider',
+                show: true, //flase直接隐藏图形
+                xAxisIndex: [0],
+                left: '4%', //滚动条靠左侧的百分比
+                bottom: '8%',
+                start: 0,//滚动条的起始位置
+                end: 100 //滚动条的截止位置（按比例分割你的柱状图x轴长度）
+            }],
+            legend: {
+                type: 'scroll',
+                orient: 'vertical',
+                right: '0%',
+                top: '5%',
+                bottom: '20%',
+                data: [
+                    {%- for _tag in tag_list -%}
+                    '{{ _tag }}',
+                    {%- endfor -%}
+                ],
+            },
+            xAxis: {
+                type: 'category',
+                splitLine: { show: false },
+                axisLabel: {
+                    interval: 0,
+                    rotate: 30,
+                },
+                data:[
+                    {%- for _tag in tag_list -%}
+                    '{{ _tag }}',
+                    {%- endfor -%}
+                ],
+            },
+            yAxis: {
+                type: 'value'
+            },
+            series: [
+                {name: 'hit', type: 'bar'},
+                {name: 'miss', type: 'bar'},
+                {
+                    name: '占比',
+                    type: 'pie',
+                    center: ['60%', '15%'],
+                    radius: '28%',
+                    z: 100
+                }
+            ],
+        },
+        options: [
+            {% for ts,item in res_map.items() -%}
+            {
+                title:{text: '{{ ts }}'},
+                series:[
+                    {
+                        name: 'hit',
+                        type: 'bar',
+                        stack: 'st',
+                        data:[
+                            {{ item['hit'] }}
+                        ]
+                    },
+                    {
+                        name: 'miss',
+                        type: 'bar',
+                        stack: 'st',
+                        data:[
+                            {{ item['miss'] }}
+                        ]
+                    },
+                    {
+                        data:[
+                            {{item['sum']}}
+                        ],
+                    }
+                ]
+            },
+            {%- endfor %}
+        ],
+
+    };
+
+    all_option_ && myChart_.setOption(all_option_);// 基于准备好的dom，初始化 echarts 实例并绘制图表。
+
+</script>

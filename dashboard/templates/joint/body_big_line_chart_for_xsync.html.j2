@@ -1,4 +1,4 @@
-<div class="echart_big_div_sync" id="{{ name }}"></div>
+<div class="echart_big_wide_div" id="{{ name }}"></div>
 <script type="text/javascript">
     var myChart_ = echarts.init(document.getElementById('{{ name }}'));
     // 指定图表的配置项和数据
@@ -15,6 +15,19 @@
         },
         title: {
             subtext: 'from sync table {{ name }} ',
+        },
+        toolbox:{
+            show: true,
+            feature: {
+                dataZoom:{
+                    yAxisIndex: "none",
+                    type: "inside"
+                },
+                dataView: {
+                    readOnly: true
+                },
+            },
+            right:'10%'
         },
         tooltip: {
             trigger: 'axis',
@@ -53,6 +66,10 @@
         xAxis: {
             type: 'category',
             splitLine: { show: false },
+            axisLabel: {
+                interval: 0,
+                rotate: 45,
+            },
             data:[
                 {%- for _ip in ip_list -%}
                 '{{ _ip }}',

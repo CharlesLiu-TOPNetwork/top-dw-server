@@ -83,6 +83,20 @@ class RedisQueue(object):
         for item in data:
             self.put_queue(item)
         return
+    
+    def handle_alarm_env_ip(self,data,env,ip):
+        if not data:
+            return
+        # print(env,ip)
+        # print(data)
+        for _each_alarm in data:
+            # print(_each_alarm)
+            _each_alarm['packet']['public_ip'] = ip
+            _each_alarm['packet']['env'] = env
+            self.put_queue(_each_alarm)
+        # print("[after]:",data)
+        return
+
 
     def put_queue(self, item):
         if not isinstance(item, dict):

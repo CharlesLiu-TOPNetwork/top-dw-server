@@ -2,26 +2,8 @@
 <script type="text/javascript">
     let default_database_str = 'choose database';
     let default_public_ip_str = 'choose ip';
-    let default_category_str = 'choose category';
-    $(document).ready(function () {
-        
-        $("#loading").hide();
-        
-        $(".category_selector").change( function(){
-            database = $(".database_selector").val();
-            public_ip = $(".public_ip_selector").val();
-            if(database == default_database_str){
-                $(".public_ip_selector").html('<option>choose ip</option>')
-                $(".category_selector").html('<option>choose category</option>')
-                return
-            }
-            if(public_ip == default_public_ip_str){
-                $(".category_selector").html('<option>choose category</option>')
-                return
-            }
 
-            update_result();
-        });
+    $(document).ready(function () {
         $(".public_ip_selector").change( function(){
             database = $(".database_selector").val();
             public_ip = $(".public_ip_selector").val();
@@ -51,20 +33,15 @@
                     update_result()
                 },
             });
-            query_category_path = "/query_categorys/?database="+database+"&"
-            category_htmlobj = $.ajax({
-                url:query_category_path,
-                async:true,
-                complete:function(){
-                    $(".category_selector").html(category_htmlobj.responseText)
-                    update_result()
-                },
-            });
         });
+        $(".store_selector").change( function(){
+            update_result();
+        });
+
         function update_result(){
             database = $(".database_selector").val()
             public_ip = $(".public_ip_selector").val()
-            category = $(".category_selector").val()
+            store_type = $(".store_selector").val()
             if(database==default_database_str || public_ip ==default_public_ip_str){
                 return
             }
@@ -78,10 +55,7 @@
                 },
             });
             
-            if(category == default_category_str){
-                return
-            }
-            query_metrics_path = "/query_ip_category_metrics/?database=" + database + "&public_ip=" + public_ip + "&category=" + category
+            query_metrics_path = "/query_state_block_store_cache_hit_rate/?database=" + database + "&public_ip=" + public_ip + "&store_type=" + store_type
             console.log(query_metrics_path)
             htmlobj = $.ajax({
                 url: query_metrics_path,
@@ -101,6 +75,7 @@
             });
         };
     })
+
 </script>
 
 <div class = "function_selectors">
@@ -116,11 +91,11 @@
         <option>choose ip</option>
     </select>
 
-    <select class="category_selector">
-        <option>choose category</option>
+    <select class="store_selector">
+        <option>blockstore</option>
+        <option>statestore</option>
     </select>
     
 </div>
 
-<div id="VnodeStatus_DIV"></div>
 <div id="Result_DIV"></div>

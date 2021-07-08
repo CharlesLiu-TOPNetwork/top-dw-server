@@ -7,7 +7,7 @@ consumer_process_count = 15
 proxy_process_count = 2
 dash_process_count = 2
 
-project_path = '/home/charles/project/top-dw'
+project_path = '/home/charles/project/top-dw-server'
 format_regex = '%Y-%m-%d %H:%M:%S'
 def now_time():
     return time.strftime(format_regex, time.localtime(time.time()))

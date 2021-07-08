@@ -45,7 +45,8 @@ def alarm_report():
 
     alarm_ip = request.headers.get('X-Forwarded-For') or request.headers.get('X-Real-IP') or request.remote_addr
     slog.info("recv alarm from ip:{0} size:{1}".format(alarm_ip, len(payload.get('data'))))
-    mq.handle_alarm(payload.get('data'))
+    # mq.handle_alarm(payload.get('data'))
+    mq.handle_alarm_env_ip(payload.get('data'), payload.get('env'), payload.get('public_ip'))
     ret = {'status': 0, 'error': status_ret.get(0)}
     return jsonify(ret)
 

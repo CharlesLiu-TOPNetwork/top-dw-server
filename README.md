@@ -3,16 +3,35 @@ record update log .
 
 ### Usage
 0. vvlinux:
-``` 
-pip3 install virtualenv
-source  vvlinux/bin/activate
-pip3 install -r requirements.txt
-```
+    ``` 
+    pip3 install virtualenv
+    virtualenv  -p /usr/bin/python3 vvlinuxs
+
+    source  vvlinux/bin/activate
+    pip3 install -r requirements.txt
+    ```
 1. nginx
-    - to be completed
+    ```
+    yum -y install gcc gcc-c++ make libtool zlib zlib-devel openssl openssl-devel pcre pcre-devel
+
+    mkdir /root/temp -p && cd /root/temp
+    wget http://nginx.org/download/nginx-1.14.2.tar.gz
+    tar zxvf nginx-1.14.2.tar.gz
+    cd nginx-1.14.2
+    ./configure --with-http_stub_status_module --with-http_ssl_module --with-pcre
+    make -j4 && make install
+
+    ```
 
 2. redis
-    - to be completed
+    ```
+    yum install redis -y
+    vi /etc/redis.conf
+    # 端口 bind 0.0.0.0;
+    # 480行可以修改redis密码 requirepass yourpasswd;
+    redis-server [config_path] &
+    redis-cli -a yourpasswd 验证启动成功
+    ```
 
 3. proxy
     -(vvlinux) `nohup python3 proxy.py &`

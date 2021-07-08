@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TOP-DW-Query-Center</title>
+    <script src="http://ajax.aspnetcdn.com/ajax/jQuery/jquery-1.8.0.js"></script>
+    <script src="../echarts.min.js"></script>
+    <style>
+        .main_page {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .btn-group{
+            margin-top:-8px;
+            margin-left:-8px;
+            margin-right:8px;
+        }
+
+        .btn-group button {
+            background-color: #4CAF50;
+            border: 1px solid green;
+            color: white;
+            padding: 10px 24px;
+            cursor: pointer;
+            float: left;
+        }
+
+        .btn-group:after {
+            content: "";
+            clear: both;
+            display: table;
+        }
+
+        .btn-group button:not(:last-child) {
+            border-right: none;
+        }
+
+        .btn-group button:hover {
+            background-color: #3e8e41;
+        }
+
+        .query_button {
+            background-color: #4CAF50;
+            border: 1px solid green;
+            color: white;
+            padding: 0.5em;
+            cursor: pointer;
+        }
+        .query_button:hover{
+            background-color: #3e8e41;
+        }
+
+        select {
+            /* styling */
+            background-color: rgb(255, 255, 255);
+            border: thin solid rgb(71, 74, 255);
+            border-radius: 4px;
+            display: inline-block;
+            font: inherit;
+            line-height: 1.5em;
+            padding: 0.5em 3.5em 0.5em 1em;
+
+            /* reset */
+
+            margin: 0;
+            -webkit-box-sizing: border-box;
+            -moz-box-sizing: border-box;
+            box-sizing: border-box;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+
+            background-image:
+                linear-gradient(45deg, transparent 50%, gray 50%),
+                linear-gradient(135deg, gray 50%, transparent 50%),
+                radial-gradient(#ddd 70%, transparent 72%);
+            background-position:
+                calc(100% - 20px) calc(1em + 2px),
+                calc(100% - 15px) calc(1em + 2px),
+                calc(100% - .5em) .5em;
+            background-size:
+                5px 5px,
+                5px 5px,
+                1.5em 1.5em;
+            background-repeat: no-repeat;
+        }
+
+        .function_selectors{
+            margin-top:10px;
+        }
+        
+        .echartdiv {
+            width: 600px;
+            height: 400px;
+            float: left;
+        }
+
+        .echart_big_div {
+            width: 1400px;
+            height: 800px;
+            margin: 0 auto;
+        }
+
+        .echart_big_wide_div {
+            width: 1800px;
+            height: 800px;
+            margin: 0 auto;
+        }
+
+        .median_echartdiv {
+            width: 1300px;
+            height: 600px;
+            margin: 0 auto;
+        }
+
+        .div_name {
+            margin: 0 5%;
+            border-top: 1px solid #f4a460;
+            text-align: center;
+            font-size: medium;
+            font-style: normal;
+        }
+    </style>
+
+    <script type="text/javascript">
+        $(document).ready(function () {
+            $("#loading").hide();
+            $("#tools_01").click(function () {
+                htmlobj = $.ajax({
+                    url: "/one_metrics/",
+                    async: true,
+                    beforeSend: function () {
+                        $("#main_page").animate({ opacity: .4 }, 500, function () { })
+                        $("#loading").show();
+                        console.log("before send");
+                    },
+                    complete: function () {
+                        $("#main_page").animate({ opacity: 1 }, 500, function () { })
+                        $("#loading").hide();
+                        $("#main_page").html(htmlobj.responseText);
+                        // console.log(htmlobj.responseText)
+                        console.log("after send");
+                    },
+
+                });
+            });
+            $("#tools_02").click(function () {
+                htmlobj = $.ajax({
+                    url: "/ip_metrics/",
+                    async: true,
+                    beforeSend: function () {
+                        $("#main_page").animate({ opacity: .4 }, 500, function () { })
+                        $("#loading").show();
+                        console.log("before send");
+                    },
+                    complete: function () {
+                        $("#main_page").animate({ opacity: 1 }, 500, function () { })
+                        $("#loading").hide();
+                        $("#main_page").html(htmlobj.responseText);
+                        // console.log(htmlobj.responseText)
+                        console.log("after send");
+                    },
+
+                });
+            });
+            $("#tools_03").click(function () {
+                htmlobj = $.ajax({
+                    url: "/xsync/",
+                    async: true,
+                    beforeSend: function () {
+                        $("#main_page").animate({ opacity: .4 }, 500, function () { })
+                        $("#loading").show();
+                        console.log("before send");
+                    },
+                    complete: function () {
+                        $("#main_page").animate({ opacity: 1 }, 500, function () { })
+                        $("#loading").hide();
+                        $("#main_page").html(htmlobj.responseText);
+                        // console.log(htmlobj.responseText)
+                        console.log("after send");
+                    },
+
+                });
+            });
+            $("#tools_04").click(function () {
+                htmlobj = $.ajax({
+                    url: "/xblockstore/",
+                    async: true,
+                    beforeSend: function () {
+                        $("#main_page").animate({ opacity: .4 }, 500, function () { })
+                        $("#loading").show();
+                        console.log("before send");
+                    },
+                    complete: function () {
+                        $("#main_page").animate({ opacity: 1 }, 500, function () { })
+                        $("#loading").hide();
+                        $("#main_page").html(htmlobj.responseText);
+                        // console.log(htmlobj.responseText)
+                        console.log("after send");
+                    },
+
+                });
+            });
+            $("#test_tools").click(function(){
+                htmlobj = $.ajax({
+                    url: "/query_xblockstore_hit/",
+                    async: true,
+                    beforeSend: function () {
+                        $("#main_page").animate({ opacity: .4 }, 500, function () { })
+                        $("#loading").show();
+                        console.log("before send");
+                    },
+                    complete: function () {
+                        $("#main_page").animate({ opacity: 1 }, 500, function () { })
+                        $("#loading").hide();
+                        $("#main_page").html(htmlobj.responseText);
+                        // console.log(htmlobj.responseText)
+                        console.log("after send");
+                    },
+
+                });
+            });
+        })
+    </script>
+</head>
+
+<body>
+    <!-- <div>
+        <button id="tools_01" type="button">one_metrics</button>
+        <button id="tools_02" type="button">ip_metrics</button>
+        <button id="tools_03" type="button">xsync</button>
+    </div> -->
+
+    <div class="btn-group" style="width:102%">
+        <button id="tools_01" style="width:30%">one_metrics</button>
+        <button id="tools_02" style="width:30%">ip_metrics</button>
+        <button id="tools_03" style="width:15%">xsync</button>
+        <button id="tools_04" style="width:20%">store_cache_hit</button>
+        <button id="test_tools" style="width:5%">tests</button>
+    </div>
+
+    <div id="loading" style="width:66px;height:66px;position:absolute;top:50%;left:50%;">
+        　　<img alt="加载中..." src="../loading.gif" />
+    </div>
+
+    <div id="main_page">
+
+    </div>
+</body>
+
+
+</html>
