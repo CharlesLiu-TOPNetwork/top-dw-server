@@ -11,9 +11,12 @@
                 $(".public_ip_selector").html('<option>choose ip</option>')
                 return
             }
-            
-            update_result();
-
+            o_public_ip = $(".o_public_ip_selector").val()
+            if(o_public_ip == null || o_public_ip == ''){
+                update_result();
+            } else {
+                compared_result();
+            }
         });
         $(".o_public_ip_selector").change( function(){
             o_public_ip = $(".o_public_ip_selector").val()
@@ -41,7 +44,12 @@
             });
         });
         $(".store_selector").change( function(){
-            update_result();
+            o_public_ip = $(".o_public_ip_selector").val()
+            if(o_public_ip == null || o_public_ip == ''){
+                update_result();
+            } else {
+                compared_result();
+            }
         });
 
         function update_result(){

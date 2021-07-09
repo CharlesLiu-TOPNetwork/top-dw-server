@@ -20,6 +20,22 @@
             title: {
                 subtext: 'from {{ name }} ',
             },
+            toolbox:{
+                show: true,
+                feature: {
+                    dataZoom:{
+                        yAxisIndex: "none"
+                    },
+                    dataView: {
+                        readOnly: true
+                    },
+                    restore: {},
+                    saveAsImage: {
+                        name:"{{ name }}"
+                    }
+                },
+                right:'10%'
+            },
             tooltip: {
                 {# trigger: 'axis',
                 axisPointer: {            // 坐标轴指示器，坐标轴触发有效
