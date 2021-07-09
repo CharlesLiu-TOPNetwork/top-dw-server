@@ -798,7 +798,13 @@ def query_store_compared_cache_hit():
                 res_map[ts][tag]["p2_c"]=item['count']
                 res_map[ts][tag]["p2_v"]=item['value']
             ts_list.sort()
-            res_page += render_template('joint/body_big_line_chart_for_compare_cache_rate.html.j2',name = public_ip + " & " + o_public_ip + " "+ store_type,ts_list = format_timestamp_list(ts_list),tag_list = tag_list,res_map = format_compared_cache_hit_data_list_to_str(tag_list,res_map))
+            res_page += render_template('joint/body_big_line_chart_for_compare_cache_rate.html.j2', 
+                                        name = public_ip + " & " + o_public_ip + " " + store_type, 
+                                        ts_list = format_timestamp_list(ts_list), 
+                                        tag_list = tag_list, 
+                                        res_map = format_compared_cache_hit_data_list_to_str(tag_list, res_map), 
+                                        public_ip = public_ip, 
+                                        o_public_ip = o_public_ip)
 
     return res_page
 
