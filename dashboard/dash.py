@@ -607,6 +607,36 @@ def format_cache_hit_data_list_to_str(tag_list: list, input_map: dict):
 
     return res_map
 
+#![help_tools] convert a [list] into a [str]
+def format_compared_cache_hit_data_list_to_str(tag_list:list,input_map:dict):
+    res_map = {}
+    for ts, item in input_map.items():
+        format_ts = time.strftime(format_regex, time.localtime(ts))
+        res_map[format_ts] = {
+            'n1_hit': "",
+            'n1_miss': "",
+            'n2_hit': "",
+            'n2_miss': "",
+        }
+        for _tag in tag_list:
+            if _tag not in item:
+                res_map[format_ts]['n1_hit'] += ","
+                res_map[format_ts]['n1_miss'] += ","
+                res_map[format_ts]['n2_hit'] += ","
+                res_map[format_ts]['n2_miss'] += ","
+            else:
+                res_map[format_ts]['n1_hit'] += str(
+                    input_map[ts][_tag]['p1_v'])+","
+                res_map[format_ts]['n1_miss'] += str(
+                    input_map[ts][_tag]['p1_c']-input_map[ts][_tag]['p1_v'])+","
+                res_map[format_ts]['n2_hit'] += str(
+                    input_map[ts][_tag]['p2_v'])+","
+                res_map[format_ts]['n2_miss'] += str(
+                    input_map[ts][_tag]['p2_c']-input_map[ts][_tag]['p2_v'])+","
+                
+    return res_map
+
+
 database_ignore_list = ['information_schema', 'mysql', 'performance_schema', 'empty', 'None','test_database_name']
 
 # ![page] query one ip , return all metrics data
@@ -701,6 +731,74 @@ def query_store_cache_hit():
             res_map[ts][tag].append(item['value'])
         ts_list.sort()
         res_page += render_template('joint/body_big_line_chart_for_cache_rate.html.j2',name = public_ip + " "+ store_type,ts_list = format_timestamp_list(ts_list),tag_list = tag_list,res_map = format_cache_hit_data_list_to_str(tag_list,res_map))
+
+    return res_page
+
+# ![api] query blockstore && statestore cache hit compare two ip
+@app.route('/query_state_block_store_compared_cache_hit_rate',methods=['GET'])
+@app.route('/query_state_block_store_compared_cache_hit_rate/',methods=['GET'])
+def query_store_compared_cache_hit():
+    database = request.args.get('database') or None
+    public_ip = request.args.get('public_ip') or None
+    store_type = request.args.get('store_type') or None
+    o_public_ip = request.args.get('o_public_ip') or None
+    res_page = ""
+    query_sql = 'SELECT send_timestamp, tag, count, value FROM `metrics_counter` WHERE category = "{0}" AND tag REGEXP "access_from*" AND public_ip = "{1}";'.format(
+        store_type, public_ip)
+    query_items = myquery.query_database(database,query_sql)
+
+    if not query_items:
+        res_page += "None data with " + public_ip + " " + store_type
+    else:
+        res_map = {}
+        tag_list = []
+        ts_list = []
+        for item in query_items:
+            ts = item['send_timestamp']
+            tag = item['tag'][12:] # access_from
+            if ts not in res_map:
+                res_map[ts]={}
+            if ts not in ts_list:
+                ts_list.append(ts)
+            if tag not in res_map[ts]:
+                res_map[ts][tag] = {
+                    "p1_c":0,
+                    "p1_v":0,
+                    "p2_c":0,
+                    "p2_v":0,
+                }
+            if tag not in tag_list:
+                tag_list.append(tag)
+            res_map[ts][tag]["p1_c"]=item['count']
+            res_map[ts][tag]["p1_v"]=item['value']
+        # o_public_ip
+        query_sql = 'SELECT send_timestamp, tag, count, value FROM `metrics_counter` WHERE category = "{0}" AND tag REGEXP "access_from*" AND public_ip = "{1}";'.format(
+        store_type, o_public_ip)
+        query_items = myquery.query_database(database,query_sql)
+
+        if not query_items:
+            res_page += "None data with " + o_public_ip + " " + store_type
+        else:
+            for item in query_items:
+                ts = item['send_timestamp']
+                tag = item['tag'][12:] # access_from
+                if ts not in res_map:
+                    res_map[ts]={}
+                if ts not in ts_list:
+                    ts_list.append(ts)
+                if tag not in res_map[ts]:
+                    res_map[ts][tag] = {
+                        "p1_c":0,
+                        "p1_v":0,
+                        "p2_c":0,
+                        "p2_v":0,
+                    }
+                if tag not in tag_list:
+                    tag_list.append(tag)
+                res_map[ts][tag]["p2_c"]=item['count']
+                res_map[ts][tag]["p2_v"]=item['value']
+            ts_list.sort()
+            res_page += render_template('joint/body_big_line_chart_for_compare_cache_rate.html.j2',name = public_ip + " & " + o_public_ip + " "+ store_type,ts_list = format_timestamp_list(ts_list),tag_list = tag_list,res_map = format_compared_cache_hit_data_list_to_str(tag_list,res_map))
 
     return res_page
 

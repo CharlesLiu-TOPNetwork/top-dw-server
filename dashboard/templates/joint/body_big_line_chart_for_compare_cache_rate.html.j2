@@ -15,19 +15,20 @@
                 loop: false,
                 playInterval: 2000,
                 left: '0%',
-                right: '20%',
+                right: '4%',
             },
             title: {
                 subtext: 'from {{ name }} ',
             },
             tooltip: {
-                {# trigger: 'axis',
+                trigger: 'axis',
                 axisPointer: {            // 坐标轴指示器，坐标轴触发有效
                     type: 'shadow'        // 默认为直线，可选为：'line' | 'shadow'
-                }, #}
+                },
                 {# formatter: function (params) {
                     if (params.constructor.toString().indexOf("Array")>-1)
                     {
+                        return params[0].name + '<br/>' + 
                         var min = params[0];
                         var max = params[1];
                         var min_value = params[0].value
@@ -40,9 +41,9 @@
                 } #}
             },
             grid: {
-                top: '30%',
+                top: '8%',
                 left: '0%',
-                right: '20%',
+                right: '5%',
                 bottom: '12%',
                 containLabel: true,
                 tooltip:{
@@ -62,18 +63,6 @@
                 start: 0,//滚动条的起始位置
                 end: 100 //滚动条的截止位置（按比例分割你的柱状图x轴长度）
             }],
-            legend: {
-                type: 'scroll',
-                orient: 'vertical',
-                right: '0%',
-                top: '5%',
-                bottom: '20%',
-                data: [
-                    {%- for _tag in tag_list -%}
-                    '{{ _tag }}',
-                    {%- endfor -%}
-                ],
-            },
             xAxis: {
                 type: 'category',
                 splitLine: { show: false },
@@ -91,15 +80,10 @@
                 type: 'value'
             },
             series: [
-                {name: 'hit', type: 'bar'},
-                {name: 'miss', type: 'bar'},
-                {
-                    name: '占比',
-                    type: 'pie',
-                    center: ['60%', '15%'],
-                    radius: '28%',
-                    z: 100
-                }
+                {name: 'node1_hit', type: 'bar'},
+                {name: 'node1_miss', type: 'bar'},
+                {name: 'node2_hit', type: 'bar'},
+                {name: 'node2_miss', type: 'bar'},
             ],
         },
         options: [
@@ -108,25 +92,36 @@
                 title:{text: '{{ ts }}'},
                 series:[
                     {
-                        name: 'hit',
+                        name: 'node1_hit',
                         type: 'bar',
-                        stack: 'st',
+                        stack: 'st1',
                         data:[
-                            {{ item['hit'] }}
+                            {{ item['n1_hit'] }}
                         ]
                     },
                     {
-                        name: 'miss',
+                        name: 'node1_miss',
                         type: 'bar',
-                        stack: 'st',
+                        stack: 'st1',
                         data:[
-                            {{ item['miss'] }}
+                            {{ item['n1_miss'] }}
                         ]
                     },
                     {
+                        name: 'node2_hit',
+                        type: 'bar',
+                        stack: 'st2',
                         data:[
-                            {{item['sum']}}
-                        ],
+                            {{ item['n2_hit'] }}
+                        ]
+                    },
+                    {
+                        name: 'node2_miss',
+                        type: 'bar',
+                        stack: 'st2',
+                        data:[
+                            {{ item['n2_miss'] }}
+                        ]
                     }
                 ]
             },

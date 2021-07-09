@@ -2,11 +2,11 @@
 <script type="text/javascript">
     let default_database_str = 'choose database';
     let default_public_ip_str = 'choose ip';
+    let default_o_public_ip_str = 'compared_ip';
 
     $(document).ready(function () {
         $(".public_ip_selector").change( function(){
             database = $(".database_selector").val();
-            public_ip = $(".public_ip_selector").val();
             if(database == default_database_str){
                 $(".public_ip_selector").html('<option>choose ip</option>')
                 return
@@ -14,6 +14,11 @@
             
             update_result();
 
+        });
+        $(".o_public_ip_selector").change( function(){
+            o_public_ip = $(".o_public_ip_selector").val()
+            if(o_public_ip == null || o_public_ip == '') return
+            compared_result();
         });
         $(".database_selector").change( function(){
             database = $(".database_selector").val();
@@ -31,6 +36,7 @@
                     console.log("after select database")
                     $(".public_ip_selector").html(ips_htmlobj.responseText)
                     update_result()
+                    $(".o_public_ip_selector").html("<option></option>"+ips_htmlobj.responseText)
                 },
             });
         });
@@ -45,17 +51,35 @@
             if(database==default_database_str || public_ip ==default_public_ip_str){
                 return
             }
-            query_vnode_status_path = "/query_ip_vnode_status/?database=" + database + "&public_ip=" + public_ip
-            console.log(query_vnode_status_path)
-            vnode_htmlobj = $.ajax({
-                url: query_vnode_status_path,
-                async: true,
-                complete: function(){
-                    $("#VnodeStatus_DIV").html(vnode_htmlobj.responseText);
-                },
-            });
-            
             query_metrics_path = "/query_state_block_store_cache_hit_rate/?database=" + database + "&public_ip=" + public_ip + "&store_type=" + store_type
+            console.log(query_metrics_path)
+            htmlobj = $.ajax({
+                url: query_metrics_path,
+                async: true,
+                beforeSend: function () {
+                    $("#Result_DIV").animate({ opacity: .4 }, 500, function () { })
+                    $("#loading").show();
+                    console.log("before send");
+                },
+                complete: function () {
+                    $("#Result_DIV").animate({ opacity: 1 }, 1000, function () { })
+                    $("#loading").hide();
+                    $("#Result_DIV").html(htmlobj.responseText);
+                    console.log("after send");
+                },
+
+            });
+        };
+
+        function compared_result(){
+            database = $(".database_selector").val()
+            public_ip = $(".public_ip_selector").val()
+            o_public_ip = $(".o_public_ip_selector").val()
+            store_type = $(".store_selector").val()
+            if(database==default_database_str || public_ip ==default_public_ip_str || o_public_ip== default_o_public_ip_str){
+                return
+            }
+            query_metrics_path = "/query_state_block_store_compared_cache_hit_rate/?database=" + database + "&public_ip=" + public_ip + "&store_type=" + store_type + "&o_public_ip=" + o_public_ip
             console.log(query_metrics_path)
             htmlobj = $.ajax({
                 url: query_metrics_path,
@@ -95,6 +119,11 @@
         <option>blockstore</option>
         <option>statestore</option>
     </select>
+    -------- compare with ip: 
+    <select class="o_public_ip_selector">
+        <option></option>
+    </select>
+    
     
 </div>
 
