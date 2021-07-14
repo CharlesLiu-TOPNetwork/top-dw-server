@@ -639,58 +639,44 @@ def format_compared_cache_hit_data_list_to_str(tag_list:list,input_map:dict):
 
 database_ignore_list = ['information_schema', 'mysql', 'performance_schema', 'empty', 'None','test_database_name']
 
+# ![inner_function] query_databases_with_create_time
+def database_time() -> list:
+    query_sql = 'SELECT TABLE_SCHEMA,CREATE_TIME FROM information_schema.TABLES WHERE TABLE_NAME = "metrics_counter";'
+    query_items = myquery.query_database('empty',query_sql)
+    res_list = []
+    for item in query_items:
+        if item['TABLE_SCHEMA'] not in database_ignore_list:
+            res_list.append({
+                'time':'['+str(item['CREATE_TIME'])+']',
+                'name':item['TABLE_SCHEMA'],
+            })
+    res_list.sort(key=lambda k: k['time'])
+    return res_list
+
 # ![page] query one ip , return all metrics data
 @app.route('/ip_metrics',methods=['GET'])
 @app.route('/ip_metrics/',methods=['GET'])
 def ip_metrics():
-    query_sql = 'SHOW DATABASES;'
-    query_items = myquery.query_database('empty',query_sql)
-    # return jsonify(query_items)
-    res_list = []
-    for item in query_items:
-        if item['Database'] not in database_ignore_list:
-            res_list.append(item['Database'])
-    # print(res_list)
-        
-    return render_template('query_center/aggregated_by_ip.html.j2', database_list=res_list)
+    return render_template('query_center/aggregated_by_ip.html.j2', database_list = database_time())
 
 # ![page] query one tag , return all ips' metrics data
 @app.route('/one_metrics',methods=['GET'])
 @app.route('/one_metrics/',methods=['GET'])
 def one_metrics():
-    query_sql = 'SHOW DATABASES;'
-    query_items = myquery.query_database('empty',query_sql)
-    res_list = []
-    for item in query_items:
-        if item['Database'] not in database_ignore_list:
-            res_list.append(item['Database'])
-    return render_template('query_center/aggregated_by_tag.html.j2', database_list = res_list)
+    return render_template('query_center/aggregated_by_tag.html.j2', database_list = database_time())
 
 # ![page] query one table address sync interval
 @app.route('/xsync',methods=['GET'])
 @app.route('/xsync/',methods=['GET'])
 def xsync():
-    query_sql = 'SHOW DATABASES;'
-    query_items = myquery.query_database('empty',query_sql)
-    res_list = []
-    for item in query_items:
-        if item['Database'] not in database_ignore_list:
-            res_list.append(item['Database'])
-    return render_template('query_center/special_packet_xsync_interval.html.j2',database_list = res_list)
-
+    return render_template('query_center/special_packet_xsync_interval.html.j2',database_list = database_time())
 
 
 # ![page] query_blockstore cache rate
 @app.route('/xblockstore',methods=['GET'])
 @app.route('/xblockstore/',methods=['GET'])
 def xblockstore():
-    query_sql = 'SHOW DATABASES;'
-    query_items = myquery.query_database('empty',query_sql)
-    res_list = []
-    for item in query_items:
-        if item['Database'] not in database_ignore_list:
-            res_list.append(item['Database'])
-    return render_template('query_center/special_packet_xblockstore_cache.html.j2',database_list = res_list)
+    return render_template('query_center/special_packet_xblockstore_cache.html.j2',database_list = database_time())
 
 # ![page][center]
 @app.route('/center',methods=['GET'])

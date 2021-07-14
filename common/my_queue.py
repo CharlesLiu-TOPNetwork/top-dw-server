@@ -42,6 +42,16 @@ class RedisQueue(object):
         qkey_perf = '{0}:xsync_interval'.format(self.queue_key_base)
         self.myredis.sadd(self.all_queue_keys,qkey_perf)
         self.all_queue_keys_set.add(qkey_perf)
+
+        # kadinfo
+        qkey_perf = '{0}:kadinfo'.format(self.queue_key_base)
+        self.myredis.sadd(self.all_queue_keys,qkey_perf)
+        self.all_queue_keys_set.add(qkey_perf)
+
+        # p2pbroadcast
+        qkey_perf = '{0}:p2pbroadcast'.format(self.queue_key_base)
+        self.myredis.sadd(self.all_queue_keys,qkey_perf)
+        self.all_queue_keys_set.add(qkey_perf)
         
         return
     
@@ -55,7 +65,7 @@ class RedisQueue(object):
         msg_hash = None
         if alarm_type == 'p2p_gossip':
             msg_hash = int(list(alarm_item.get('packet').get('content').keys())[0]) 
-        elif alarm_type == 'vnode_status' or alarm_type == 'xsync_interval':
+        elif alarm_type == 'vnode_status' or alarm_type == 'xsync_interval' or alarm_type == 'kadinfo' or alarm_type == 'p2pbroadcast':
             return '{0}:{1}'.format(self.queue_key_base,alarm_type)
         else:
             msg_hash = random.randint(0,10000)

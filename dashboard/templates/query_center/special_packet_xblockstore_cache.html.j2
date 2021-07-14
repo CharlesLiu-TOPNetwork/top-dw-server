@@ -114,8 +114,8 @@
 
     <select class="database_selector">
         <option>choose database</option>
-        {%- for database in database_list -%}
-        <option value="{{database}}">{{database}}</option>
+        {%- for info in database_list -%}
+        <option value="{{info.name}}">{{info.time}}:{{info.name}}</option>
         {%- endfor -%}
     </select>
 

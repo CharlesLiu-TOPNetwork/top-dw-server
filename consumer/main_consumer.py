@@ -22,6 +22,8 @@ from consumer import metrics_flow_consumer
 from consumer import metrics_counter_consumer
 from consumer import vnode_status_consumer
 from consumer import xsync_interval_consumer
+from consumer import p2p_kadinfo_consumer
+from consumer import p2p_broadcast_consumer
 
 mq = my_queue.RedisQueue(host= sconfig.REDIS_HOST, port=sconfig.REDIS_PORT, password=sconfig.REDIS_PASS)
 
@@ -35,6 +37,8 @@ def run(alarm_type, alarm_env = 'test'):
             'metrics_counter':[],
             'vnode_status':[],
             'xsync_interval':[],
+            'kadinfo':[],
+            "p2pbroadcast":[],
             }
     for qkey in all_queue_key:
         if qkey.find('p2p_gossip') != -1:
@@ -49,6 +53,10 @@ def run(alarm_type, alarm_env = 'test'):
             qkey_map['vnode_status'].append(qkey)
         if qkey.find('xsync_interval')!=-1:
             qkey_map['xsync_interval'].append(qkey)
+        if qkey.find('kadinfo')!=-1:
+            qkey_map['kadinfo'].append(qkey)
+        if qkey.find('p2pbroadcast')!=-1:
+            qkey_map['p2pbroadcast'].append(qkey)
 
     slog.warn('qkey_map:{0}'.format(json.dumps(qkey_map)))
 
@@ -81,6 +89,14 @@ def run(alarm_type, alarm_env = 'test'):
         
         for qkey in qkey_map.get('xsync_interval'):
             consumer = xsync_interval_consumer.XsyncIntervalConsumer(q=mq,queue_key_list=[qkey],alarm_env=alarm_env)
+            consumer_list.append(consumer)
+        
+        for qkey in qkey_map.get('kadinfo'):
+            consumer = p2p_kadinfo_consumer.P2pKadinfoConsumer(q=mq,queue_key_list=[qkey],alarm_env=alarm_env)
+            consumer_list.append(consumer)
+        
+        for qkey in qkey_map.get('p2pbroadcast'):
+            consumer = p2p_broadcast_consumer.P2pBroadcastConsumer(q=mq,queue_key_list=[qkey],alarm_env=alarm_env)
             consumer_list.append(consumer)
 
     if not consumer_list:

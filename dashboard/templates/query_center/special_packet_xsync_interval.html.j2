@@ -79,8 +79,8 @@ XINLINE_CONSTEXPR char const * sys_contract_sharding_table_block_addr{ "Ta0000gR
 
     <select class="database_selector">
         <option>choose database</option>
-        {%- for database in database_list -%}
-        <option value="{{database}}">{{database}}</option>
+        {%- for info in database_list -%}
+        <option value="{{info.name}}">{{info.time}}:{{info.name}}</option>
         {%- endfor -%}
     </select>
 

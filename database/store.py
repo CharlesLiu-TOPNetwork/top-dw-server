@@ -42,6 +42,15 @@ class Store(str):
             use_sql = 'USE {};'
             self.cursor.execute(use_sql.format(database))
 
+            # env_info:
+            # env_info_sql = '\
+            #     CREATE TABLE env_info(\
+            #         k VARCHAR(100) DEFAULT "",\
+            #         v VARCHAR(100) DEFAULT ""\
+            #     )ENGINE = INNODB DEFAULT CHARSET = utf8;\
+            #     INSERT INTO `env_info` (`k`,`v`) VALUES ("create_timestamp",NOW());'
+            # self.cursor.execute(env_info_sql)
+
             # p2p gossip table
             create_p2p_table_sql = '\
             CREATE TABLE p2p(\
@@ -159,6 +168,67 @@ class Store(str):
             ) ENGINE = INNODB DEFAULT CHARSET = utf8;'
             self.cursor.execute(create_xsync_interval_table_sql)
 
+            #kadinfo_root
+            create_kadinfo_root_table_sql = '\
+            CREATE TABLE kadinfo_root (\
+                public_ip VARCHAR ( 40 ) DEFAULT "" NOT NULL,\
+                node_id VARCHAR ( 100 ) DEFAULT "",\
+                neighbours INT ( 10 ) DEFAULT 0,\
+                last_update_time INT ( 10 ) DEFAULT 0,\
+                UNIQUE ( public_ip, node_id ) \
+            ) ENGINE = INNODB DEFAULT CHARSET = utf8;'
+            self.cursor.execute(create_kadinfo_root_table_sql)
+
+            #kadinfo_elect
+            create_kadinfo_elect_table_sql = '\
+            CREATE TABLE kadinfo_elect (\
+                public_ip VARCHAR ( 40 ) DEFAULT "" NOT NULL,\
+                node_id VARCHAR ( 100 ) DEFAULT "",\
+                service_type VARCHAR ( 20 ) DEFAULT "",\
+                node_size INT ( 10 ) DEFAULT 0,\
+                height INT ( 10 ) DEFAULT 0,\
+                unknown_node_size INT ( 10 ) DEFAULT 0,\
+                last_update_time INT ( 10 ) DEFAULT 0,\
+                UNIQUE ( public_ip, node_id, service_type, node_size, height) \
+            ) ENGINE = INNODB DEFAULT CHARSET = utf8;'
+            self.cursor.execute(create_kadinfo_elect_table_sql)
+
+            #p2p_raw_msg_info
+            create_p2p_raw_msg_info_table_sql = '\
+            CREATE TABLE p2p_raw_msg_info (\
+                public_ip VARCHAR ( 40 ) DEFAULT "",\
+                msg_hash BIGINT ( 20 ) NOT NULL,\
+                timestamp BIGINT ( 20 ) DEFAULT 0,\
+                type VARCHAR ( 20 ) DEFAULT 0,\
+                src_node_id VARCHAR ( 100 ) DEFAULT "",\
+                dst_node_id VARCHAR ( 100 ) DEFAULT "",\
+                hop_num INT ( 10 ) DEFAULT 0,\
+                msg_size INT ( 10 ) NOT NULL,\
+                is_root INT ( 10 ) DEFAULT 0,\
+                is_broadcast INT ( 10 ) DEFAULT 0,\
+                INDEX ( msg_hash, public_ip ) \
+            ) ENGINE = INNODB DEFAULT CHARSET = utf8;'
+            self.cursor.execute(create_p2p_raw_msg_info_table_sql)
+
+            
+            #p2p_dump_msg_info
+            create_p2p_dump_msg_info_table_sql = '\
+            CREATE TABLE p2p_dump_msg_info (\
+                send_timestamp BIGINT ( 20 ) DEFAULT 0,\
+                msg_hash BIGINT ( 20 ) NOT NULL,\
+                src_node_id VARCHAR ( 100 ) DEFAULT "",\
+                dst_node_id VARCHAR ( 100 ) DEFAULT "",\
+                src_ip VARCHAR ( 40 ) DEFAULT "",\
+                msg_size INT ( 10 ) NOT NULL,\
+                is_root INT ( 10 ) DEFAULT 0,\
+                is_broadcast INT ( 10 ) DEFAULT 0,\
+                recv_node_cnt INT ( 10 ) DEFAULT 0,\
+                recv_avg_delay FLOAT ( 10 ) DEFAULT 0.0,\
+                avg_hop_num FLOAT ( 10 ) DEFAULT 0.0,\
+                avg_packet_size FLOAT ( 10 ) DEFAULT 0.0,\
+            INDEX ( msg_hash ) \
+            ) ENGINE = INNODB DEFAULT CHARSET = utf8;'
+            self.cursor.execute(create_p2p_dump_msg_info_table_sql)
 
             (self.cursor.close(), self.db.close(), self.__init__(database))
 
@@ -227,6 +297,22 @@ class Store(str):
         safe_keys = ['`%s`' % k for k in keys]
         sql = 'INSERT IGNORE INTO `%s`(%s) VALUES(%s)' % (
             table, ','.join(safe_keys), '%s' + ',%s' * (size - 1))
+        print(sql)
+        last_id = self.cursor.execute(sql, [item[key] for key in keys])
+        return last_id
+    
+    def store_insert_update(self,table,item:dict,update_item:list):
+        if not item or not update_item:
+            return ValueError('input item error')
+        
+        self.check_timeout()
+        size = len(item)
+        keys = item.keys()
+        safe_keys = ['`%s`' % k for k in keys]
+        sql = 'INSERT INTO `%s` ( %s ) VALUES ( %s )' % (table,','.join(safe_keys), '%s' + ',%s' * (size - 1))
+        update_sql_list = ['`%s` = VALUES( `%s` )' % (k,k) for k in update_item]
+
+        sql = sql + ' ON DUPLICATE KEY UPDATE '+ ','.join(update_sql_list)
         print(sql)
         last_id = self.cursor.execute(sql, [item[key] for key in keys])
         return last_id
