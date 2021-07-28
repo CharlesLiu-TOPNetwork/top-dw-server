@@ -204,6 +204,25 @@
 
                 });
             });
+            $("#tools_05").click(function () {
+                htmlobj = $.ajax({
+                    url: "/xtxpool/",
+                    async: true,
+                    beforeSend: function () {
+                        $("#main_page").animate({ opacity: .4 }, 500, function () { })
+                        $("#loading").show();
+                        console.log("before send");
+                    },
+                    complete: function () {
+                        $("#main_page").animate({ opacity: 1 }, 500, function () { })
+                        $("#loading").hide();
+                        $("#main_page").html(htmlobj.responseText);
+                        // console.log(htmlobj.responseText)
+                        console.log("after send");
+                    },
+
+                });
+            });
             $("#test_tools").click(function(){
                 htmlobj = $.ajax({
                     url: "/query_xblockstore_hit/",
@@ -235,10 +254,11 @@
     </div> -->
 
     <div class="btn-group" style="width:102%">
-        <button id="tools_01" style="width:30%">one_metrics</button>
-        <button id="tools_02" style="width:30%">ip_metrics</button>
+        <button id="tools_01" style="width:25%">one_metrics</button>
+        <button id="tools_02" style="width:25%">ip_metrics</button>
         <button id="tools_03" style="width:15%">xsync</button>
-        <button id="tools_04" style="width:20%">store_cache_hit</button>
+        <button id="tools_04" style="width:15%">store_cache_hit</button>
+        <button id="tools_05" style="width:15%">txpool</button>
         <button id="test_tools" style="width:5%">tests</button>
     </div>
 

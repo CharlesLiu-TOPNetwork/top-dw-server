@@ -33,11 +33,12 @@ record update log .
     redis-cli -a yourpasswd 验证启动成功
     ```
 
-3. proxy
-    -(vvlinux) `nohup python3 proxy.py &`
+3. 启动工具链:
+    - `cd keep_alive_tools/ && bash -x start.sh`
 
-4. consumer
-    -(vvlinux) `nohup python3 main_consumer.py -t test`
+4. 关掉工具链：
+    - `cd keep_alive_tools/ && bash -x kill.sh`
+
 
 
 #### 0624

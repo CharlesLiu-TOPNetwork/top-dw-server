@@ -1,15 +1,11 @@
-<div class="echart_big_wide_div" id="{{ name }}"></div>
+<div class="echart_big_wide_div" id="192.168.181.128/tmp/rec3/xtop.log txpool_state"></div>
 <script type="text/javascript">
-    var myChart_ = echarts.init(document.getElementById('{{ name }}'));
+    var myChart_ = echarts.init(document.getElementById('192.168.181.128/tmp/rec3/xtop.log txpool_state'));
     // 指定图表的配置项和数据
     var all_option_ = {
         baseOption:{
             timeline: {
-                data: [
-                    {%- for _ts in ts_list -%}
-                    '{{_ts}}',
-                    {%- endfor -%}
-                ],
+                data: ['2021-07-28 05:50:00','2021-07-28 05:55:00','2021-07-28 06:00:00',],
                 axisType: 'category',
                 autoPlay: true,
                 loop: false,
@@ -18,7 +14,7 @@
                 right: '20%',
             },
             title: {
-                subtext: 'from {{ name }} ',
+                subtext: 'from 192.168.181.128/tmp/rec3/xtop.log txpool_state ',
             },
             toolbox:{
                 show: true,
@@ -31,29 +27,14 @@
                     },
                     restore: {},
                     saveAsImage: {
-                        name:"{{ name }}"
+                        name:"192.168.181.128/tmp/rec3/xtop.log txpool_state"
                     }
                 },
                 right:'10%'
             },
             tooltip: {
-                {# trigger: 'axis',
-                axisPointer: {            // 坐标轴指示器，坐标轴触发有效
-                    type: 'shadow'        // 默认为直线，可选为：'line' | 'shadow'
-                }, #}
-                {# formatter: function (params) {
-                    if (params.constructor.toString().indexOf("Array")>-1)
-                    {
-                        var min = params[0];
-                        var max = params[1];
-                        var min_value = params[0].value
-                        var max_value = min_value + params[1].value
-                        var other_max_value = params[2].value+params[3].value
-                        return max.name + '<br/>' + max.seriesName + ' : ' + min_value + ' - ' + max_value + '<br/>' + params[3].seriesName + ' : ' + params[2].value + ' - ' + other_max_value;
-                    }
-                    // timeline:
-                    return params.name;
-                } #}
+                
+                
             },
             grid: {
                 top: '30%',
@@ -84,11 +65,7 @@
                 right: '0%',
                 top: '5%',
                 bottom: '20%',
-                data: [
-                    {%- for _tag in tag_list -%}
-                    '{{ _tag }}',
-                    {%- endfor -%}
-                ],
+                data: ['table_num','unconfirm','received_recv','received_confirm','pulled_recv','pulled_confirm',],
             },
             xAxis: {
                 type: 'category',
@@ -97,18 +74,13 @@
                     interval: 0,
                     rotate: 30,
                 },
-                data:[
-                    {%- for _tag in tag_list -%}
-                    '{{ _tag }}',
-                    {%- endfor -%}
-                ],
+                data:['table_num','unconfirm','received_recv','received_confirm','pulled_recv','pulled_confirm',],
             },
             yAxis: {
                 type: 'value'
             },
             series: [
-                {name: 'hit', type: 'bar'},
-                {name: 'miss', type: 'bar'},
+                { name: 'value', type: 'bar' }, 
                 {
                     name: '占比',
                     type: 'pie',
@@ -118,35 +90,49 @@
                 }
             ],
         },
-        options: [
-            {% for ts,item in res_map.items() -%}
-            {
-                title:{text: '{{ ts }}'},
+        options: [{
+                title:{text: '2021-07-28 05:50:00'},
                 series:[
                     {
-                        name: 'hit',
+                        name: 'value',
                         type: 'bar',
-                        stack: 'st',
-                        data:[
-                            {{ item['hit'] }}
-                        ]
-                    },
-                    {
-                        name: 'miss',
-                        type: 'bar',
-                        stack: 'st',
-                        data:[
-                            {{ item['miss'] }}
-                        ]
+                        data: [36,1,2,3,4,5]
                     },
                     {
                         data:[
-                            {{item['sum']}}
+                            {name:'table_num',value:36},{name:'unconfirm',value:12},{name:'received_recv',value:42},{name:'received_confirm',value:53},{name:'pulled_recv',value:null},{name:'pulled_confirm',value:null},
+                        ],
+                    }
+                ]
+            },{
+                title:{text: '2021-07-28 05:55:00'},
+                series:[
+                    {
+                        name: 'value',
+                        type: 'bar',
+                        data: [36,1,2,3,4,5]
+                    },
+                    {
+                        data:[
+                            {name:'table_num',value:36},{name:'unconfirm',value:null},{name:'received_recv',value:null},{name:'received_confirm',value:null},{name:'pulled_recv',value:null},{name:'pulled_confirm',value:null},
+                        ],
+                    }
+                ]
+            },{
+                title:{text: '2021-07-28 06:00:00'},
+                series:[
+                    {
+                        name: 'value',
+                        type: 'bar',
+                        data: [36,1,2,3,4,5]
+                    },
+                    {
+                        data:[
+                            {name:'table_num',value:36},{name:'unconfirm',value:null},{name:'received_recv',value:null},{name:'received_confirm',value:null},{name:'pulled_recv',value:null},{name:'pulled_confirm',value:null},
                         ],
                     }
                 ]
             },
-            {%- endfor %}
         ],
 
     };

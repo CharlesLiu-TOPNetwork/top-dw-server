@@ -580,6 +580,37 @@ def format_sync_data_list_to_str(ip_list:list,input_map:dict):
     # print(res_map)
     return res_map
 
+#![help_tools] convert a [list] into a [str]
+def format_txpool_data_list_to_str(tag_list:list,input_map:dict):
+    res_map = {}
+    for ts,item in input_map.items():
+        format_ts = time.strftime(format_regex, time.localtime(ts))
+        res_map[format_ts] = {
+            'value':"",
+            'sum_pie':"",
+        }
+        for _tag in tag_list:
+            res_map[format_ts]['value'] +=str(input_map[ts][_tag])+","
+            if input_map[ts][_tag]!=0:
+                res_map[format_ts]['sum_pie'] += "{name:'"+_tag + "',value:" + str(input_map[ts][_tag]) +"},"
+            else:
+                res_map[format_ts]['sum_pie'] += "{name:'"+_tag + "',value:null},"
+    return res_map
+
+#![help_tools] convert a [list] into a [str]
+def format_compare_txpool_data_list_to_str(tag_list:list,input_map:dict):
+    res_map = {}
+    for ts,item in input_map.items():
+        format_ts = time.strftime(format_regex, time.localtime(ts))
+        res_map[format_ts] = {
+            'n1_value':"",
+            'n2_value':"",
+            'sum_pie':"",
+        }
+        for _tag in tag_list:
+            res_map[format_ts]['n1_value'] +=str(input_map[ts][_tag]['n1'])+","
+            res_map[format_ts]['n2_value'] +=str(input_map[ts][_tag]['n2'])+","
+    return res_map
 
 #![help_tools] convert a [list] into a [str] which skip the None data
 def format_cache_hit_data_list_to_str(tag_list: list, input_map: dict):
@@ -671,18 +702,147 @@ def one_metrics():
 def xsync():
     return render_template('query_center/special_packet_xsync_interval.html.j2',database_list = database_time())
 
-
 # ![page] query_blockstore cache rate
 @app.route('/xblockstore',methods=['GET'])
 @app.route('/xblockstore/',methods=['GET'])
 def xblockstore():
     return render_template('query_center/special_packet_xblockstore_cache.html.j2',database_list = database_time())
 
+# ![page] query txpool real_time metrics
+@app.route('/xtxpool',methods=['GET'])
+@app.route('/xtxpool/',methods=['GET'])
+def xtxpool():
+    return render_template('query_center/special_packet_xtxpool.html.j2',database_list = database_time())
+
 # ![page][center]
 @app.route('/center',methods=['GET'])
 @app.route('/center/',methods=['GET'])
 def center_page():
     return render_template('query_center/center.html')
+
+
+txpool_cache_item_list = ['send_cur','recv_cur','confirm_cur','unconfirm_cur','push_send_fail','push_receipt_fail','duplicate_cache','repeat_cache']
+txpool_state_item_list = ['table_num','unconfirm','received_recv','received_confirm','pulled_recv','pulled_confirm']
+txpool_receipt_item_list = ['1clk','2clk','3clk','4clk','5clk','6clk','7to12clk','13to30clk','ex30clk']
+
+# ![api] query_txpool_table
+@app.route('/query_txpool_table',methods=['GET'])
+@app.route('/query_txpool_table/',methods=['GET'])
+def query_txpool_table():
+    database = request.args.get('database') or None
+    public_ip = request.args.get('public_ip') or None
+    table_name = request.args.get('table_name') or None
+    
+    res_page = ""
+    query_sql = ""
+    tag_list = []
+    if table_name == 'txpool_cache':
+        query_sql = 'SELECT send_timestamp,{0} FROM `txpool_cache` WHERE public_ip = "{1}";'.format(
+            ','.join(txpool_cache_item_list), public_ip)
+        tag_list = txpool_cache_item_list
+    elif table_name == 'txpool_state':
+        query_sql = 'SELECT send_timestamp,{0} FROM `txpool_state` WHERE public_ip = "{1}";'.format(
+            ','.join(txpool_state_item_list), public_ip)
+        tag_list = txpool_state_item_list
+    elif table_name == 'txpool_receipt':
+        query_sql = 'SELECT send_timestamp,{0} FROM `txpool_receipt` WHERE public_ip = "{1}";'.format(
+            ','.join(txpool_receipt_item_list), public_ip)
+        tag_list = txpool_receipt_item_list
+    
+    query_items = myquery.query_database(database,query_sql)
+    if not query_items:
+        res_page += "None data with " + table_name
+    else:
+        res_map = {}
+        ts_list = []
+        for item in query_items:
+            ts = item['send_timestamp']
+            if ts not in res_map:
+                res_map[ts]={}
+            if ts not in ts_list:
+                ts_list.append(ts)
+            for _tag in tag_list:
+                res_map[ts][_tag] = item[_tag]
+        ts_list.sort()
+        res_page += render_template('joint/body_big_line_chart_for_txpool.html.j2',name = public_ip + " "+ table_name,ts_list = format_timestamp_list(ts_list),tag_list = tag_list,res_map = format_txpool_data_list_to_str(tag_list,res_map))
+
+    return res_page
+
+# ![api] query_txpool_table_compared
+@app.route('/query_txpool_table_compared',methods=['GET'])
+@app.route('/query_txpool_table_compared/',methods=['GET'])
+def query_txpool_table_compared():
+    database = request.args.get('database') or None
+    public_ip = request.args.get('public_ip') or None
+    table_name = request.args.get('table_name') or None
+    o_public_ip = request.args.get('o_public_ip') or None
+    
+    res_page = ""
+    query_sql = ""
+    o_query_sql = ""
+    tag_list = []
+    if table_name == 'txpool_cache':
+        query_sql = 'SELECT send_timestamp,{0} FROM `txpool_cache` WHERE public_ip = "{1}";'.format(
+            ','.join(txpool_cache_item_list), public_ip)
+        o_query_sql = 'SELECT send_timestamp,{0} FROM `txpool_cache` WHERE public_ip = "{1}";'.format(
+            ','.join(txpool_cache_item_list), o_public_ip)
+        tag_list = txpool_cache_item_list
+    elif table_name == 'txpool_state':
+        query_sql = 'SELECT send_timestamp,{0} FROM `txpool_state` WHERE public_ip = "{1}";'.format(
+            ','.join(txpool_state_item_list), public_ip)
+        o_query_sql = 'SELECT send_timestamp,{0} FROM `txpool_state` WHERE public_ip = "{1}";'.format(
+            ','.join(txpool_state_item_list), o_public_ip)
+        tag_list = txpool_state_item_list
+    elif table_name == 'txpool_receipt':
+        query_sql = 'SELECT send_timestamp,{0} FROM `txpool_receipt` WHERE public_ip = "{1}";'.format(
+            ','.join(txpool_receipt_item_list), public_ip)
+        o_query_sql = 'SELECT send_timestamp,{0} FROM `txpool_receipt` WHERE public_ip = "{1}";'.format(
+            ','.join(txpool_receipt_item_list), o_public_ip)
+        tag_list = txpool_receipt_item_list
+    query_items = myquery.query_database(database,query_sql)
+    if not query_items:
+        res_page += "None data with " + public_ip + table_name
+    else:
+        res_map = {}
+        ts_list = []
+        for item in query_items:
+            ts = item['send_timestamp']
+            if ts not in res_map:
+                res_map[ts]={}
+                for _tag in tag_list:
+                    res_map[ts][_tag] = {
+                        'n1':'',
+                        'n2':'',
+                    }
+            if ts not in ts_list:
+                ts_list.append(ts)
+            for _tag in tag_list:
+                res_map[ts][_tag]['n1'] = item[_tag]
+        
+        # o_public_ip
+        query_items = myquery.query_database(database,o_query_sql)
+
+        if not query_items:
+            res_page += "None data with " + o_public_ip + " " + table_name
+        else:
+            for item in query_items:
+                ts = item['send_timestamp']
+                if ts not in res_map:
+                    res_map[ts]={}
+                    for _tag in tag_list:
+                        res_map[ts][_tag] = {
+                            'n1':'',
+                            'n2':'',
+                        }
+                if ts not in ts_list:
+                    ts_list.append(ts)
+                for _tag in tag_list:
+                    res_map[ts][_tag]['n2'] = item[_tag]
+
+        ts_list.sort()
+        res_page += render_template('joint/body_big_line_chart_for_compare_txpool.html.j2',name = public_ip + " "+ table_name,ts_list = format_timestamp_list(ts_list),tag_list = tag_list,res_map = format_compare_txpool_data_list_to_str(tag_list,res_map),p_ip = public_ip,o_ip = o_public_ip)
+
+    return res_page
 
 # ![api] query blockstore && statestore cache hit 
 @app.route('/query_state_block_store_cache_hit_rate',methods=['GET'])
@@ -835,7 +995,7 @@ def query_xblockstore_hit():
 
     # print(res_map)
 
-    return render_template('tmp_blockstore.html')
+    return render_template('tmp_test.html')
     return res_page
 
 

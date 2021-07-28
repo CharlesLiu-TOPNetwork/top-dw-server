@@ -1,0 +1,139 @@
+
+<script type="text/javascript">
+    let default_database_str = 'choose database';
+    let default_public_ip_str = 'choose ip';
+    let default_o_public_ip_str = 'compared_ip';
+
+    $(document).ready(function () {
+        $(".public_ip_selector").change( function(){
+            database = $(".database_selector").val();
+            if(database == default_database_str){
+                $(".public_ip_selector").html('<option>choose ip</option>')
+                return
+            }
+            o_public_ip = $(".o_public_ip_selector").val()
+            if(o_public_ip == null || o_public_ip == ''){
+                update_result();
+            } else {
+                compared_result();
+            }
+        });
+        $(".o_public_ip_selector").change( function(){
+            o_public_ip = $(".o_public_ip_selector").val()
+            if(o_public_ip == null || o_public_ip == '') return
+            compared_result();
+        });
+        $(".database_selector").change( function(){
+            database = $(".database_selector").val();
+            if(database == default_database_str){
+                $(".public_ip_selector").html('<option>choose ip</option>')
+                return
+            }
+            console.log("change database selector "+database)
+            query_path = "/query_ips/?database=" + database
+            console.log(query_path)
+            ips_htmlobj = $.ajax({
+                url: query_path,
+                async:true,
+                complete:function(){
+                    console.log("after select database")
+                    $(".public_ip_selector").html(ips_htmlobj.responseText)
+                    update_result()
+                    $(".o_public_ip_selector").html("<option></option>"+ips_htmlobj.responseText)
+                },
+            });
+        });
+        $(".table_selector").change( function(){
+            o_public_ip = $(".o_public_ip_selector").val()
+            if(o_public_ip == null || o_public_ip == ''){
+                update_result();
+            } else {
+                compared_result();
+            }
+        });
+
+        function update_result(){
+            database = $(".database_selector").val()
+            public_ip = $(".public_ip_selector").val()
+            table_name = $(".table_selector").val()
+            if(database==default_database_str || public_ip ==default_public_ip_str){
+                return
+            }
+            query_metrics_path = "/query_txpool_table/?database=" + database + "&public_ip=" + public_ip + "&table_name=" + table_name
+            console.log(query_metrics_path)
+            htmlobj = $.ajax({
+                url: query_metrics_path,
+                async: true,
+                beforeSend: function () {
+                    $("#Result_DIV").animate({ opacity: .4 }, 500, function () { })
+                    $("#loading").show();
+                    console.log("before send");
+                },
+                complete: function () {
+                    $("#Result_DIV").animate({ opacity: 1 }, 1000, function () { })
+                    $("#loading").hide();
+                    $("#Result_DIV").html(htmlobj.responseText);
+                    console.log("after send");
+                },
+
+            });
+        };
+
+        function compared_result(){
+            database = $(".database_selector").val()
+            public_ip = $(".public_ip_selector").val()
+            o_public_ip = $(".o_public_ip_selector").val()
+            table_name = $(".table_selector").val()
+            if(database==default_database_str || public_ip ==default_public_ip_str || o_public_ip== default_o_public_ip_str){
+                return
+            }
+            query_metrics_path = "/query_txpool_table_compared/?database=" + database + "&public_ip=" + public_ip + "&table_name=" + table_name + "&o_public_ip=" + o_public_ip
+            console.log(query_metrics_path)
+            htmlobj = $.ajax({
+                url: query_metrics_path,
+                async: true,
+                beforeSend: function () {
+                    $("#Result_DIV").animate({ opacity: .4 }, 500, function () { })
+                    $("#loading").show();
+                    console.log("before send");
+                },
+                complete: function () {
+                    $("#Result_DIV").animate({ opacity: 1 }, 1000, function () { })
+                    $("#loading").hide();
+                    $("#Result_DIV").html(htmlobj.responseText);
+                    console.log("after send");
+                },
+
+            });
+        };
+    })
+
+</script>
+
+<div class = "function_selectors">
+
+    <select class="database_selector">
+        <option>choose database</option>
+        {%- for info in database_list -%}
+        <option value="{{info.name}}">{{info.time}}:{{info.name}}</option>
+        {%- endfor -%}
+    </select>
+
+    <select class="public_ip_selector">
+        <option>choose ip</option>
+    </select>
+
+    <select class="table_selector">
+        <option>txpool_state</option>
+        <option>txpool_receipt</option>
+        <option>txpool_cache</option>
+    </select>
+    -------- compare with ip: 
+    <select class="o_public_ip_selector">
+        <option></option>
+    </select>
+    
+    
+</div>
+
+<div id="Result_DIV"></div>

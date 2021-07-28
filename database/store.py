@@ -230,6 +230,54 @@ class Store(str):
             ) ENGINE = INNODB DEFAULT CHARSET = utf8;'
             self.cursor.execute(create_p2p_dump_msg_info_table_sql)
 
+            #txpool_state
+            create_txpool_state_table_sql = '\
+            CREATE TABLE txpool_state (\
+                send_timestamp BIGINT ( 20 ) DEFAULT 0,\
+                public_ip VARCHAR ( 40 ) DEFAULT "",\
+                table_num BIGINT ( 20 ) DEFAULT 0,\
+                unconfirm BIGINT ( 20 ) DEFAULT 0,\
+                received_recv BIGINT ( 20 ) DEFAULT 0,\
+                received_confirm BIGINT ( 20 ) DEFAULT 0,\
+                pulled_recv BIGINT ( 20 ) DEFAULT 0,\
+                pulled_confirm BIGINT ( 20 ) DEFAULT 0,\
+            INDEX (public_ip) \
+            ) ENGINE = INNODB DEFAULT CHARSET = utf8;'
+            self.cursor.execute(create_txpool_state_table_sql)
+            #txpool_receipt
+            create_txpool_receipt_table_sql = '\
+            CREATE TABLE txpool_receipt (\
+                send_timestamp BIGINT ( 20 ) DEFAULT 0,\
+                public_ip VARCHAR ( 40 ) DEFAULT "",\
+                1clk BIGINT ( 20 ) DEFAULT 0,\
+                2clk BIGINT ( 20 ) DEFAULT 0,\
+                3clk BIGINT ( 20 ) DEFAULT 0,\
+                4clk BIGINT ( 20 ) DEFAULT 0,\
+                5clk BIGINT ( 20 ) DEFAULT 0,\
+                6clk BIGINT ( 20 ) DEFAULT 0,\
+                7to12clk BIGINT ( 20 ) DEFAULT 0,\
+                13to30clk BIGINT ( 20 ) DEFAULT 0,\
+                ex30clk BIGINT ( 20 ) DEFAULT 0,\
+            INDEX (public_ip) \
+            ) ENGINE = INNODB DEFAULT CHARSET = utf8;'
+            self.cursor.execute(create_txpool_receipt_table_sql)
+            #txpool_cache
+            create_txpool_cache_table_sql = '\
+            CREATE TABLE txpool_cache (\
+                send_timestamp BIGINT ( 20 ) DEFAULT 0,\
+                public_ip VARCHAR ( 40 ) DEFAULT "",\
+                send_cur BIGINT ( 20 ) DEFAULT 0,\
+                recv_cur BIGINT ( 20 ) DEFAULT 0,\
+                confirm_cur BIGINT ( 20 ) DEFAULT 0,\
+                unconfirm_cur BIGINT ( 20 ) DEFAULT 0,\
+                push_send_fail BIGINT ( 20 ) DEFAULT 0,\
+                push_receipt_fail BIGINT ( 20 ) DEFAULT 0,\
+                duplicate_cache BIGINT ( 20 ) DEFAULT 0,\
+                repeat_cache BIGINT ( 20 ) DEFAULT 0,\
+            INDEX (public_ip) \
+            ) ENGINE = INNODB DEFAULT CHARSET = utf8;'
+            self.cursor.execute(create_txpool_cache_table_sql)
+
             (self.cursor.close(), self.db.close(), self.__init__(database))
 
         self.db = pymysql.connect(**{

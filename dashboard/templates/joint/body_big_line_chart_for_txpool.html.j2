@@ -15,7 +15,7 @@
                 loop: false,
                 playInterval: 2000,
                 left: '0%',
-                right: '20%',
+                right: '10%',
             },
             title: {
                 subtext: 'from {{ name }} ',
@@ -37,28 +37,11 @@
                 right:'10%'
             },
             tooltip: {
-                {# trigger: 'axis',
-                axisPointer: {            // 坐标轴指示器，坐标轴触发有效
-                    type: 'shadow'        // 默认为直线，可选为：'line' | 'shadow'
-                }, #}
-                {# formatter: function (params) {
-                    if (params.constructor.toString().indexOf("Array")>-1)
-                    {
-                        var min = params[0];
-                        var max = params[1];
-                        var min_value = params[0].value
-                        var max_value = min_value + params[1].value
-                        var other_max_value = params[2].value+params[3].value
-                        return max.name + '<br/>' + max.seriesName + ' : ' + min_value + ' - ' + max_value + '<br/>' + params[3].seriesName + ' : ' + params[2].value + ' - ' + other_max_value;
-                    }
-                    // timeline:
-                    return params.name;
-                } #}
             },
             grid: {
-                top: '30%',
+                top: '20%',
                 left: '0%',
-                right: '20%',
+                right: '10%',
                 bottom: '12%',
                 containLabel: true,
                 tooltip:{
@@ -107,41 +90,29 @@
                 type: 'value'
             },
             series: [
-                {name: 'hit', type: 'bar'},
-                {name: 'miss', type: 'bar'},
+                {name: 'value', type:'bar'},
                 {
                     name: '占比',
                     type: 'pie',
-                    center: ['60%', '15%'],
+                    center: ['70%', '25%'],
                     radius: '28%',
                     z: 100
                 }
             ],
         },
         options: [
-            {% for ts,item in res_map.items() -%}
+            {%- for ts,item in res_map.items() -%}
             {
                 title:{text: '{{ ts }}'},
                 series:[
                     {
-                        name: 'hit',
+                        name: 'value',
                         type: 'bar',
-                        stack: 'st',
-                        data:[
-                            {{ item['hit'] }}
-                        ]
-                    },
-                    {
-                        name: 'miss',
-                        type: 'bar',
-                        stack: 'st',
-                        data:[
-                            {{ item['miss'] }}
-                        ]
+                        data: [{{item['value']}}]
                     },
                     {
                         data:[
-                            {{item['sum']}}
+                            {{item['sum_pie']}}
                         ],
                     }
                 ]
