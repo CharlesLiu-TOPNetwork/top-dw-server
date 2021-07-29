@@ -714,12 +714,65 @@ def xblockstore():
 def xtxpool():
     return render_template('query_center/special_packet_xtxpool.html.j2',database_list = database_time())
 
+# ![page] query metrics alarm
+@app.route('/metrics_alarm',methods=['GET'])
+@app.route('/metrics_alarm/',methods=['GET'])
+def metrics_alarm():
+    return render_template('query_center/metrics_alarm.html.j2',database_list = database_time())
+
 # ![page][center]
 @app.route('/center',methods=['GET'])
 @app.route('/center/',methods=['GET'])
 def center_page():
     return render_template('query_center/center.html')
 
+
+# ![api] query_alarm_page: used by metrics_alarm.html. query button return a table div.
+@app.route('/query_alarm_page',methods=['GET'])
+@app.route('/query_alarm_page/',methods=['GET'])
+def query_alarm_page():
+    database = request.args.get('database') or None
+    public_ip = request.args.get('public_ip') or None
+    category = request.args.get('category') or None
+    
+    query_sql = "select count(seq_id) as res_cnt from metrics_alarm "
+    if public_ip != "all_ip" and category !="all_category":
+        query_sql = query_sql + 'where public_ip="'+public_ip+'" and '+ 'category="'+category+'" '  
+    elif public_ip != "all_ip":
+        query_sql = query_sql + 'where public_ip="'+public_ip+'" '
+    elif category != "all_category":
+        query_sql = query_sql + 'where category="'+category+'" '    
+    # print(query_sql)
+    query_items = myquery.query_database(database,query_sql)
+    if not query_items[0]['res_cnt']:
+        return "no alarm with {0} {1} {2}".format(database,public_ip,category)
+    return render_template('joint/body_table_metrics_alarm.html.j2', max_seq=query_items[0]['res_cnt'], database=database, public_ip=public_ip, category=category)
+
+# ![api] query_alarm_data: used by more data in body_table_metrics_alarm.html.j2
+@app.route('/query_alarm_data',methods=['GET'])
+@app.route('/query_alarm_data/',methods=['GET'])
+def query_alarm_data():
+    database = request.args.get('database') or None
+    category = request.args.get('category') or None
+    public_ip = request.args.get('public_ip') or None
+    begin_seq_id = request.args.get('begin_seq_id') or None
+    
+    query_sql = "select * from metrics_alarm "
+    if public_ip != "all_ip" and category !="all_category":
+        query_sql = query_sql + 'where public_ip="'+public_ip+'" and '+ 'category="'+category+'" '  
+    elif public_ip != "all_ip":
+        query_sql = query_sql + 'where public_ip="'+public_ip+'" '
+    elif category != "all_category":
+        query_sql = query_sql + 'where category="'+category+'" ' 
+    query_sql = query_sql + "limit {0},10".format(begin_seq_id)
+    # print(query_sql)
+    # query_sql = "select * from metrics_alarm limit {0},10".format(begin_seq_id)
+    query_items = myquery.query_database(database,query_sql)
+    for item in query_items:
+        item['send_timestamp'] = time.strftime(format_regex, time.localtime(item['send_timestamp']))
+    # print(query_items)
+    # print(jsonify(query_items))
+    return jsonify(query_items)
 
 txpool_cache_item_list = ['send_cur','recv_cur','confirm_cur','unconfirm_cur','push_send_fail','push_receipt_fail','duplicate_cache','repeat_cache']
 txpool_state_item_list = ['table_num','unconfirm','received_recv','received_confirm','pulled_recv','pulled_confirm']
@@ -1118,6 +1171,21 @@ def query_categorys():
         res_list.append(item['category'])
     # print(res_list)
     return render_template('query_center/query_categorys.html.j2',category_lists = res_list)
+
+# ![api] query one database category with certain type
+@app.route('/query_categorys_with_type',methods=['GET'])
+@app.route('/query_categorys_with_type/',methods=['GET'])
+def query_categorys_with_type():
+    database = request.args.get('database') or None
+    type = request.args.get('type') or None
+    query_sql = 'SELECT DISTINCT category FROM tags_table where type= "{0}";'.format(type)
+    query_items = myquery.query_database(database,query_sql)
+    res_list = []
+    for item in query_items:
+        res_list.append(item['category'])
+    # print(res_list)
+    return render_template('query_center/query_categorys.html.j2',category_lists = res_list)
+
 
 # ![api] query one database tag
 @app.route('/query_tags',methods=['GET'])

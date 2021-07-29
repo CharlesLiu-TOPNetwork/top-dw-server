@@ -27,6 +27,7 @@ from consumer import p2p_broadcast_consumer
 from consumer import txpool_state_consumer
 from consumer import txpool_receipt_consumer
 from consumer import txpool_cache_consumer
+from consumer import metrics_alarm_consumer
 
 mq = my_queue.RedisQueue(host= sconfig.REDIS_HOST, port=sconfig.REDIS_PORT, password=sconfig.REDIS_PASS)
 
@@ -45,6 +46,7 @@ def run(alarm_type, alarm_env = 'test'):
             "txpool_state":[],
             "txpool_receipt":[],
             "txpool_cache":[],
+            "metrics_alarm":[],
             }
 
     for qkey in all_queue_key:
@@ -70,6 +72,8 @@ def run(alarm_type, alarm_env = 'test'):
             qkey_map['txpool_receipt'].append(qkey)
         if qkey.find('txpool_cache')!=-1:
             qkey_map['txpool_cache'].append(qkey)
+        if qkey.find('metrics_alarm')!=-1:
+            qkey_map['metrics_alarm'].append(qkey)
 
     slog.warn('qkey_map:{0}'.format(json.dumps(qkey_map)))
 
@@ -113,18 +117,19 @@ def run(alarm_type, alarm_env = 'test'):
             consumer_list.append(consumer)
         
         for qkey in qkey_map.get('txpool_state'):
-            print(qkey)
             consumer = txpool_state_consumer.TxpoolStateConsumer(q=mq,queue_key_list=[qkey],alarm_env=alarm_env)
             consumer_list.append(consumer)
 
         for qkey in qkey_map.get('txpool_receipt'):
-            print(qkey)
             consumer = txpool_receipt_consumer.TxpoolReceiptConsumer(q=mq,queue_key_list=[qkey],alarm_env=alarm_env)
             consumer_list.append(consumer)
             
         for qkey in qkey_map.get('txpool_cache'):
-            print(qkey)
             consumer = txpool_cache_consumer.TxpoolCacheConsumer(q=mq,queue_key_list=[qkey],alarm_env=alarm_env)
+            consumer_list.append(consumer)
+        
+        for qkey in qkey_map.get('metrics_alarm'):
+            consumer = metrics_alarm_consumer.MetricsAlarmConsumer(q=mq,queue_key_list=[qkey],alarm_env=alarm_env)
             consumer_list.append(consumer)
 
     if not consumer_list:

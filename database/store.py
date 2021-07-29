@@ -278,6 +278,20 @@ class Store(str):
             ) ENGINE = INNODB DEFAULT CHARSET = utf8;'
             self.cursor.execute(create_txpool_cache_table_sql)
 
+            #metrics_alarm
+            create_metrics_alarm_table_sql = '\
+            CREATE TABLE metrics_alarm (\
+                seq_id INT ( 10 ) NOT NULL auto_increment,\
+                send_timestamp BIGINT ( 20 ) DEFAULT 0,\
+                public_ip VARCHAR ( 40 ) DEFAULT "",\
+                category VARCHAR ( 30 ) DEFAULT "",\
+                tag VARCHAR ( 100 ) DEFAULT "",\
+                kv_content VARCHAR ( 1024 ) DEFAULT "",\
+                PRIMARY KEY ( seq_id ),\
+            INDEX ( public_ip ) \
+            ) ENGINE = INNODB DEFAULT CHARSET = utf8;'
+            self.cursor.execute(create_metrics_alarm_table_sql)
+
             (self.cursor.close(), self.db.close(), self.__init__(database))
 
         self.db = pymysql.connect(**{

@@ -1,0 +1,146 @@
+<style type="text/css">
+    .mainDiv {
+        width: 100%;
+    }
+
+    table {
+        border-collapse: collapse;
+        border-spacing: 0;
+    }
+
+    td,
+    th {
+        padding: 0;
+    }
+
+    .pure-table {
+        border-collapse: collapse;
+        border-spacing: 0;
+        empty-cells: show;
+        border: 1px solid #cbcbcb;
+        margin-top: 10px;
+    }
+
+    .pure-table caption {
+        color: #000;
+        font: italic 85%/1 arial, sans-serif;
+        padding: 1em 0;
+        text-align: center;
+    }
+
+    .pure-table td,
+    .pure-table th {
+        border-left: 1px solid #cbcbcb;
+        border-width: 0 0 0 1px;
+        font-size: inherit;
+        margin: 0;
+        overflow: visible;
+        padding: .5em 1em;
+    }
+
+    .pure-table thead {
+        background-color: #e0e0e0;
+        color: #000;
+        text-align: left;
+        vertical-align: bottom;
+    }
+
+    .pure-table td {
+        background-color: transparent;
+    }
+
+    .pure-table-bordered td {
+        border-bottom: 1px solid #cbcbcb;
+    }
+
+    .pure-table-bordered tbody>tr:last-child>td {
+        border-bottom-width: 0;
+    }
+</style>
+
+<script type="text/javascript">
+
+    let default_database_str = '[MUST] choose database';
+    let start_id = 239;
+    let query_cnt = 0;
+
+    $(".database_selector").change( function(){
+        database = $(".database_selector").val();
+        if(database == default_database_str){
+            $(".public_ip_selector").html('<option>choose ip</option>')
+            return
+        }
+        do_query_result();
+        console.log("change database selector "+database)
+        query_path = "/query_ips/?database=" + database
+        console.log(query_path)
+        ips_htmlobj = $.ajax({
+            url: query_path,
+            async:true,
+            complete:function(){
+                console.log("after select database")
+                $(".public_ip_selector").html("<option>all_ip</option>"+ips_htmlobj.responseText)
+            },
+        });
+        query_category_path = "/query_categorys_with_type/?database="+database+"&type=alarm"
+        category_htmlobj = $.ajax({
+            url:query_category_path,
+            async:true,
+            complete:function(){
+                $(".category_selector").html("<option>all_category</option>"+category_htmlobj.responseText)
+            },
+        });
+    });
+    $(".public_ip_selector").change( function(){
+        do_query_result();
+    });
+    $(".category_selector").change( function(){
+        do_query_result();
+    });
+
+    function do_query_result(){
+        database = $(".database_selector").val();
+        if(database!=default_database_str){
+            public_ip = $(".public_ip_selector").val();
+            category = $(".category_selector").val();
+            query_path = "/query_alarm_page/?database="+database+"&public_ip="+public_ip+"&category="+category;
+            console.log(query_path)
+            htmlobj = $.ajax({
+                url: query_path,
+                async: true,
+                beforeSend: function () {
+                    $("#Result_DIV").animate({ opacity: .4 }, 500, function () { })
+                    $("#loading").show();
+                    console.log("before send");
+                },
+                complete: function () {
+                    $("#Result_DIV").animate({ opacity: 1 }, 1000, function () { })
+                    $("#loading").hide();
+                    $("#Result_DIV").html(htmlobj.responseText);
+                    console.log("after send");
+                },
+
+            });
+        }
+    }
+
+</script>
+
+    <div class="function_selectors">
+        <select class="database_selector">
+            <option>[MUST] choose database</option>
+            {%- for info in database_list -%}
+            <option value="{{info.name}}">{{info.time}}:{{info.name}}</option>
+            {%- endfor -%}
+        </select>
+        
+        <select class="public_ip_selector">
+            <option>all_ip</option>
+        </select>
+
+        <select class="category_selector">
+            <option>all_category</option>
+        </select>
+    </div>
+    
+<div id="Result_DIV"></div>

@@ -128,7 +128,7 @@
     <script type="text/javascript">
         $(document).ready(function () {
             $("#loading").hide();
-            $("#tools_01").click(function () {
+            $("#tools_0_one_metrics").click(function () {
                 htmlobj = $.ajax({
                     url: "/one_metrics/",
                     async: true,
@@ -147,7 +147,7 @@
 
                 });
             });
-            $("#tools_02").click(function () {
+            $("#tools_0_ip_metrics").click(function () {
                 htmlobj = $.ajax({
                     url: "/ip_metrics/",
                     async: true,
@@ -166,7 +166,26 @@
 
                 });
             });
-            $("#tools_03").click(function () {
+            $("#tools_0_metrics_alarm").click(function () {
+                htmlobj = $.ajax({
+                    url: "/metrics_alarm/",
+                    async: true,
+                    beforeSend: function () {
+                        $("#main_page").animate({ opacity: .4 }, 500, function () { })
+                        $("#loading").show();
+                        console.log("before send");
+                    },
+                    complete: function () {
+                        $("#main_page").animate({ opacity: 1 }, 500, function () { })
+                        $("#loading").hide();
+                        $("#main_page").html(htmlobj.responseText);
+                        // console.log(htmlobj.responseText)
+                        console.log("after send");
+                    },
+
+                });
+            });
+            $("#tools_1_xsync").click(function () {
                 htmlobj = $.ajax({
                     url: "/xsync/",
                     async: true,
@@ -185,7 +204,7 @@
 
                 });
             });
-            $("#tools_04").click(function () {
+            $("#tools_1_store_cache_hit").click(function () {
                 htmlobj = $.ajax({
                     url: "/xblockstore/",
                     async: true,
@@ -204,7 +223,7 @@
 
                 });
             });
-            $("#tools_05").click(function () {
+            $("#tools_1_txpool").click(function () {
                 htmlobj = $.ajax({
                     url: "/xtxpool/",
                     async: true,
@@ -247,19 +266,16 @@
 </head>
 
 <body>
-    <!-- <div>
-        <button id="tools_01" type="button">one_metrics</button>
-        <button id="tools_02" type="button">ip_metrics</button>
-        <button id="tools_03" type="button">xsync</button>
-    </div> -->
 
     <div class="btn-group" style="width:102%">
-        <button id="tools_01" style="width:25%">one_metrics</button>
-        <button id="tools_02" style="width:25%">ip_metrics</button>
-        <button id="tools_03" style="width:15%">xsync</button>
-        <button id="tools_04" style="width:15%">store_cache_hit</button>
-        <button id="tools_05" style="width:15%">txpool</button>
-        <button id="test_tools" style="width:5%">tests</button>
+        <button id="tools_0_one_metrics" style="width:18%">one_metrics</button>
+        <button id="tools_0_ip_metrics" style="width:18%">ip_metrics</button>
+        <!-- background-color:#9a0000; -->
+        <button id="tools_0_metrics_alarm" style="width:18%;">metrics_alarm</button>
+        <button id="tools_1_xsync" style="width:14%">xsync</button>
+        <button id="tools_1_store_cache_hit" style="width:14%">store_cache_hit</button>
+        <button id="tools_1_txpool" style="width:14%">txpool</button>
+        <button id="test_tools" style="width:4%">tests</button>
     </div>
 
     <div id="loading" style="width:66px;height:66px;position:absolute;top:50%;left:50%;">

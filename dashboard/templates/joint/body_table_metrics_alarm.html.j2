@@ -1,0 +1,82 @@
+<script type="text/javascript">
+    var start_id = {{max_seq}};
+    var query_cnt = 0;
+    $(function () {
+        getData();
+
+        function getData() {
+            query_cnt++;
+            start_id = start_id - 10;
+            resp = $.ajax({
+                url: "/query_alarm_data/?database={{database}}&public_ip={{public_ip}}"+"&category={{category}}"+"&begin_seq_id=" + start_id,
+                async: true,
+                beforeSend: function () {
+                    console.log("before send query_alarm_data");
+                },
+                complete: function () {
+                    console.log("after  send query_alarm_data");
+                    insertTable(JSON.parse(resp.responseText))
+                }
+            });
+        }
+
+        function insertTable(json) {
+            var $table = $(".table_content");
+            console.log(json.length)
+            {# console.log(json) #}
+            for (var i = json.length - 1; i >= 0; i--) {
+                var html = '';
+                id = json[i]['seq_id'];
+                public_ip = json[i]['public_ip'];
+                send_timestamp = json[i]['send_timestamp'];
+                category = json[i]['category'];
+                tag = json[i]['tag'];
+                // parse json into multi-line readable format
+                content = json[i]['kv_content'].replace(/,/g, ",<br>");
+
+                html += '<tr>';
+                html += '<td>' + id + '</td>';
+                html += '<td>' + public_ip + '</td>';
+                html += '<td>' + send_timestamp + '</td>';
+                html += '<td>' + category + '</td>';
+                html += '<td>' + tag + '</td>';
+                html += '<td>' + content + '</td>';
+                html += '</tr>';
+
+                $table.append(html);
+            }
+        }
+        $("#btn_Page").click(function () {
+            getData();
+        });
+
+    })
+</script>
+<table class="pure-table pure-table-bordered">
+    <thead>
+        <tr>
+            <th>#id</th>
+            <th>public_ip</th>
+            <th>timestamp</th>
+            <th>category</th>
+            <th>tag</th>
+            <th>content</th>
+        </tr>
+    </thead>
+
+    <tbody class="table_content">
+        <!-- <tr>
+                <td>1</td>
+                <td>Honda</td>
+                <td>Accord</td>
+                <td>2009111111111111111111111111111111</td>
+                <td>2009111111111111111111111111111111</td>
+                <td>2009111111111111111111111111111111</td>
+            </tr> -->
+    </tbody>
+</table>
+
+
+<div>
+    <a href="javascript:void(0);" id="btn_Page">查看更多>>></a>
+</div>
