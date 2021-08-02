@@ -292,6 +292,20 @@ class Store(str):
             ) ENGINE = INNODB DEFAULT CHARSET = utf8;'
             self.cursor.execute(create_metrics_alarm_table_sql)
 
+            # metrics array_counter
+            create_metrics_array_counter_table_sql = '\
+            CREATE TABLE metrics_array_counter(\
+                send_timestamp INT(10) DEFAULT 0,\
+                public_ip VARCHAR(40) DEFAULT "",\
+                category VARCHAR(30) DEFAULT "",\
+                tag VARCHAR(100) DEFAULT "",\
+                count BIGINT(20) DEFAULT 0,\
+                each_value VARCHAR(2048) DEFAULT "",\
+                each_count VARCHAR(2048) DEFAULT "",\
+                INDEX(category,tag,public_ip,send_timestamp)\
+            )ENGINE = InnoDB DEFAULT CHARSET = utf8;'
+            self.cursor.execute(create_metrics_array_counter_table_sql)
+
             (self.cursor.close(), self.db.close(), self.__init__(database))
 
         self.db = pymysql.connect(**{

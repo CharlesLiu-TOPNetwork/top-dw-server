@@ -231,6 +231,67 @@ def query_one(database,table,wanted,category,tag):
     return render_template('multi.html.j2', x_list = format_timestamp_list(x_list), data_list = data_list)
 
 '''
+# ![function] used by other apis, return an [category - tag - type:array_counter]'s all nodes' metrics data (one full picture)
+def query_array_counter(database,category,tag):
+    query_sql = 'SELECT public_ip,send_timestamp,count,each_value,each_count FROM metrics_array_counter WHERE category = "' + \
+        category+'" AND tag = "'+tag + '" ORDER BY public_ip,send_timestamp;'
+    query_items = myquery.query_database(database,query_sql)
+
+    res_item = {}
+    x_list = []
+    data_lists = {
+        'count':{},
+        'sum_value':{},
+    }
+    print(query_items)
+    if not query_items:
+        return "no data with {0} {1} {2} {3}".format(database,category,tag)
+    size = len(query_items[0]['each_value'][1:-1].split(","))
+    print(size)
+    for i in range(0,size) : 
+        data_lists['count_'+str(i)]={}
+        data_lists['value_'+str(i)]={}
+
+    for item in query_items:
+        ip = item['public_ip']
+        if ip not in res_item:
+            res_item[ip] = {}
+        for _key, _val in data_lists.items():
+            if ip not in data_lists[_key]:
+                data_lists[_key][ip] = []
+        ts = item['send_timestamp']
+        if ts not in x_list:
+            x_list.append(ts)
+        if ts not in res_item[ip]:
+            res_item[ip][ts] = {}
+        res_item[ip][ts]['count'] = item['count']
+        each_value = item['each_value'][1:-1].split(",")
+        res_item[ip][ts]['sum_value'] = sum([int(_e) for _e in each_value])
+        each_count = item['each_count'][1:-1].split(",")
+        for i in range(0,size):
+            res_item[ip][ts]['count_'+str(i)] = each_count[i]
+            res_item[ip][ts]['value_'+str(i)] = each_value[i]
+    
+    print(res_item)
+
+    x_list.sort()
+
+    for _key, data_list in data_lists.items():
+        for _ip, _list in data_list.items():
+            for ts in x_list:
+                if ts in res_item[_ip]:
+                    _list.append(res_item[_ip][ts][_key])
+                else:
+                    _list.append(0)
+    
+    # print(data_lists)
+    res = render_template('joint/body_div_line.html', name=category+tag)
+    for _key, data_list in data_lists.items():
+        res = res + render_template('joint/body_div_line.html', name=_key)
+        res = res + render_template('joint/body_big_line_chart_for_one_metrics_tag.html.j2',
+                                    name=_key, data_list=format_data_list_to_str(data_list), x_list=format_timestamp_list(x_list), append_info = '[' + database + ']' + category + '_' + tag)
+    return res
+
 
 # ![function] used by other apis, return an [category - tag - type:counter]'s all nodes' metrics data (one full picture)
 def query_counter(database, category, tag):
@@ -396,6 +457,8 @@ def query_category_tag_metrics():
         return query_flow(database, category, tag)
     elif type == 'timer':
         return query_timer(database, category, tag)
+    elif type == 'array_counter':
+        return query_array_counter(database, category, tag)
     else:
         return "query_category_tag_metrics"  
 

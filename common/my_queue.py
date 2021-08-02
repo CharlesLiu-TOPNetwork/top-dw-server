@@ -69,6 +69,11 @@ class RedisQueue(object):
         self.myredis.sadd(self.all_queue_keys,qkey_perf)
         self.all_queue_keys_set.add(qkey_perf)
 
+        # metrics_array_counter
+        qkey_perf = '{0}:metrics_array_counter'.format(self.queue_key_base)
+        self.myredis.sadd(self.all_queue_keys,qkey_perf)
+        self.all_queue_keys_set.add(qkey_perf)
+
 
         return
     
@@ -82,7 +87,7 @@ class RedisQueue(object):
         msg_hash = None
         if alarm_type == 'p2p_gossip':
             msg_hash = int(list(alarm_item.get('packet').get('content').keys())[0]) 
-        elif alarm_type in ['vnode_status','xsync_interval','kadinfo','p2pbroadcast','txpool_state','txpool_receipt','txpool_cache','metrics_alarm'] :
+        elif alarm_type in ['vnode_status','xsync_interval','kadinfo','p2pbroadcast','txpool_state','txpool_receipt','txpool_cache','metrics_alarm','metrics_array_counter'] :
             return '{0}:{1}'.format(self.queue_key_base,alarm_type)
         else:
             msg_hash = random.randint(0,10000)

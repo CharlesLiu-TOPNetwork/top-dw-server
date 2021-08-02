@@ -5,7 +5,7 @@ check_interval = 60 # every 1 min
 restart_dashboard_interval = 180 # every three hours
 global_restart_dashboard_interval = 0 # counter
 
-consumer_process_count = 21
+consumer_process_count = 22
 proxy_process_count = 2
 dash_process_count = 2
 
