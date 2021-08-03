@@ -243,11 +243,11 @@ def query_array_counter(database,category,tag):
         'count':{},
         'sum_value':{},
     }
-    print(query_items)
+    # print(query_items)
     if not query_items:
         return "no data with {0} {1} {2} {3}".format(database,category,tag)
     size = len(query_items[0]['each_value'][1:-1].split(","))
-    print(size)
+    # print(size)
     for i in range(0,size) : 
         data_lists['count_'+str(i)]={}
         data_lists['value_'+str(i)]={}
@@ -272,7 +272,7 @@ def query_array_counter(database,category,tag):
             res_item[ip][ts]['count_'+str(i)] = each_count[i]
             res_item[ip][ts]['value_'+str(i)] = each_value[i]
     
-    print(res_item)
+    # print(res_item)
 
     x_list.sort()
 
@@ -285,11 +285,32 @@ def query_array_counter(database,category,tag):
                     _list.append(0)
     
     # print(data_lists)
+
     res = render_template('joint/body_div_line.html', name=category+tag)
-    for _key, data_list in data_lists.items():
-        res = res + render_template('joint/body_div_line.html', name=_key)
-        res = res + render_template('joint/body_big_line_chart_for_one_metrics_tag.html.j2',
-                                    name=_key, data_list=format_data_list_to_str(data_list), x_list=format_timestamp_list(x_list), append_info = '[' + database + ']' + category + '_' + tag)
+    res = res + render_template('joint/body_center_line_chart_for_pair_metrics_tag.html.j2', 
+                                name = "sum_data",
+                                name_1="sum_count", 
+                                name_2="sum_value", 
+                                data_list_1=format_data_list_to_str(data_lists['count']), 
+                                data_list_2=format_data_list_to_str(data_lists['sum_value']), 
+                                x_list=format_timestamp_list(x_list), 
+                                append_info='[' + database + ']' + category + '_' + tag)
+    
+    for i in range(0,size) : 
+        res = res + render_template('joint/body_center_line_chart_for_pair_metrics_tag.html.j2', 
+                                name = "index_"+str(i)+"_data",
+                                name_1='count_'+str(i), 
+                                name_2='value_'+str(i), 
+                                data_list_1=format_data_list_to_str(data_lists['count_'+str(i)]), 
+                                data_list_2=format_data_list_to_str(data_lists['value_'+str(i)]), 
+                                x_list=format_timestamp_list(x_list), 
+                                append_info='[' + database + ']' + category + '_' + tag)
+
+
+    # for _key, data_list in data_lists.items():
+    #     res = res + render_template('joint/body_div_line.html', name=_key)
+    #     res = res + render_template('joint/body_big_line_chart_for_one_metrics_tag.html.j2',
+    #                                 name=_key, data_list=format_data_list_to_str(data_list), x_list=format_timestamp_list(x_list), append_info = '[' + database + ']' + category + '_' + tag)
     return res
 
 

@@ -1,0 +1,238 @@
+<style>
+.echart_median_div_pair {
+    width: 50%;
+    height: 100%;
+    float:left;
+}
+.echart_median_div_pair_main {
+    width: 1920px;
+    height: 900px;
+    float:left;
+}
+</style>
+
+<hr style="FILTER:alpha(opacity=100,finishopacity=0,style=3)" width="90%" color=#f4a460 SIZE=1>
+<div class = "div_name">
+<input id="selectall_{{ name }}" type="button" style="margin:5px 5px;position:relative;" value="全不选" flag="1"/>
+    {{ name }}
+</div>
+<div class = "echart_median_div_pair_main">
+<div class= "echart_median_div_pair" id="{{ name_1 }}" ></div>
+<div class= "echart_median_div_pair" id="{{ name_2 }}" ></div>
+</div>
+<script type="text/javascript">
+    var myChart_{{ name_1 }} = echarts.init(document.getElementById('{{ name_1 }}'));
+    var option_{{ name_1 }} = {
+        title: {
+            text: '{{ name_1 }}',
+            textStyle:{
+                width: 1200,
+                overflow: "break",
+            },
+        },
+        toolbox:{
+            show: true,
+            feature: {
+                dataZoom:{
+                    yAxisIndex: "none"
+                },
+                dataView: {
+                    readOnly: true
+                },
+                restore: {},
+                saveAsImage: {
+                    name:"{{ append_info }}_{{ name_1 }}"
+                }
+            },
+            right:'10%'
+        },
+        tooltip:{
+            trigger:'axis',
+            position: [20, 80],
+            formatter: function(params){
+                let astr = '<div>'+params[0].axisValue+'</div>'
+                params.forEach(ele => {
+                const data = ele.data
+                if(data){
+                    astr += `
+                        <div style="display: block;height:20px;width:50%;float:left;">
+                        <i style="width: 10px;height: 10px;display: inline-block;background: ${ele.color};border-radius: 10px;"></i>
+                        <span>${ele.seriesName}: ${data}</span>
+                        </div>
+                    `
+                    }
+                }
+                )
+                const b = '<div style="width: 600px;">' + astr + '<div>'
+                return b
+            }
+        },
+        dataZoom: [{
+                    type: 'slider',
+                    show: true, 
+                    xAxisIndex: [0],
+                    left: '9%', 
+                    bottom: '5%',
+                    start: 0,
+                    end: 100 
+                }],
+        legend:{
+            data:[
+                {%- for item in data_list_1 -%}
+                    '{{ item }}',
+                {%- endfor -%}
+            ],
+            top:"10%",
+        },
+        grid:{
+            left: "10%",
+            right: "10%",
+            bottom: "15%",
+            top: "40%",
+        },
+        xAxis: {
+            name:"发送时间",
+            type: 'category',
+            data:
+            [
+                {%- for item in x_list -%}
+                    '{{ item }}',
+                {%- endfor -%}
+            ]
+        },
+        yAxis: {
+            type: 'value'
+        },
+        series: [
+            {% for k,v in data_list_1.items() %}
+            {
+                type: 'line',
+                name: '{{ k }}',
+                data:  {{ v }},
+            },
+            {% endfor %}
+        ]
+    };
+    option_{{ name_1 }} && myChart_{{ name_1 }}.setOption(option_{{ name_1 }});
+
+
+    var myChart_{{ name_2 }} = echarts.init(document.getElementById('{{ name_2 }}'));
+    var option_{{ name_2 }} = {
+        title: {
+            text: '{{ name_2 }}',
+            textStyle:{
+                width: 1200,
+                overflow: "break",
+            },
+        },
+        toolbox:{
+            show: true,
+            feature: {
+                dataZoom:{
+                    yAxisIndex: "none"
+                },
+                dataView: {
+                    readOnly: true
+                },
+                restore: {},
+                saveAsImage: {
+                    name:"{{ append_info }}_{{ name_2 }}"
+                }
+            },
+            right:'10%'
+        },
+        tooltip:{
+            trigger:'axis',
+            position: [20, 80],
+            formatter: function(params){
+                let astr = '<div>'+params[0].axisValue+'</div>'
+                params.forEach(ele => {
+                const data = ele.data
+                if(data){
+                    astr += `
+                        <div style="display: block;height:20px;width:50%;float:left;">
+                        <i style="width: 10px;height: 10px;display: inline-block;background: ${ele.color};border-radius: 10px;"></i>
+                        <span>${ele.seriesName}: ${data}</span>
+                        </div>
+                    `
+                    }
+                }
+                )
+                const b = '<div style="width: 600px;">' + astr + '<div>'
+                return b
+            }
+        },
+        dataZoom: [{
+                    type: 'slider',
+                    show: true, 
+                    xAxisIndex: [0],
+                    left: '9%', 
+                    bottom: '5%',
+                    start: 0,
+                    end: 100 
+                }],
+        legend:{
+            data:[
+                {%- for item in data_list_2 -%}
+                    '{{ item }}',
+                {%- endfor -%}
+            ],
+            top:"10%",
+        },
+        grid:{
+            left: "10%",
+            right: "10%",
+            bottom: "15%",
+            top: "40%",
+        },
+        xAxis: {
+            name:"发送时间",
+            type: 'category',
+            data:
+            [
+                {%- for item in x_list -%}
+                    '{{ item }}',
+                {%- endfor -%}
+            ]
+        },
+        yAxis: {
+            type: 'value'
+        },
+        series: [
+            {% for k,v in data_list_2.items() %}
+            {
+                type: 'line',
+                name: '{{ k }}',
+                data:  {{ v }},
+            },
+            {% endfor %}
+        ]
+    };
+    option_{{ name_2 }} && myChart_{{ name_2 }}.setOption(option_{{ name_2 }});
+
+    var selectArr_1 = myChart_{{ name_1 }}.getOption().legend[0].data;
+    var selectArr_2 = myChart_{{ name_2 }}.getOption().legend[0].data;
+    $('#selectall_{{ name }}').click(function () {
+        var flag = $(this).attr('flag');
+        if (flag == 1) {
+            var val = false;
+            $(this).attr('flag', 0);
+            $(this).val('全选中');
+        } else {
+            var val = true;
+            $(this).attr('flag', 1);
+            $(this).val('全不选');
+        }
+        var obj = {};
+        for (var key in selectArr_1) {
+            obj[selectArr_1[key]] = val;
+        }
+        for (var key in selectArr_2) {
+            obj[selectArr_2[key]] = val;
+        }
+        option_{{ name_1 }}.legend.selected = obj;
+        myChart_{{ name_1 }}.setOption(option_{{ name_1 }});
+        option_{{ name_2 }}.legend.selected = obj;
+        myChart_{{ name_2 }}.setOption(option_{{ name_2 }});
+    });
+</script>
