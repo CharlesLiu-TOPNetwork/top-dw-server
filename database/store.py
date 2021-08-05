@@ -36,10 +36,10 @@ class Store(str):
         self.cursor.execute('show databases like "{}"'.format(database))
         # 创建库
         if self.cursor.fetchone() is None:
-            create_sql = 'CREATE DATABASE {} DEFAULT CHARACTER SET UTF8MB4 COLLATE utf8mb4_general_ci;'
+            create_sql = 'CREATE DATABASE `{}` DEFAULT CHARACTER SET UTF8MB4 COLLATE utf8mb4_general_ci;'
             self.cursor.execute(create_sql.format(database))
 
-            use_sql = 'USE {};'
+            use_sql = 'USE `{}`;'
             self.cursor.execute(use_sql.format(database))
 
             # env_info:
