@@ -1,4 +1,5 @@
 import time
+import datetime
 import socket
 import requests
 import sys
@@ -54,8 +55,8 @@ alarm_template = {
              }},
     "alarm": {"msgtype": "markdown",
               "markdown": {
-                         "title": "[dw_alarm]",
-                         "text": "",
+                  "title": "[dw_alarm]",
+                  "text": "",
               },
               "at": {
                   "atUserIds": [],
@@ -81,7 +82,7 @@ def send_alarm_to_dingding(type: str, content):
 
     template = alarm_template[type]
     print(template)
-    template["markdown"]["text"] = "#### http://{0}/center {1}".format(
+    template["markdown"]["text"] = "#### http://{0}/center \n{1}".format(
         my_ip, content)
 
     send_data = json.dumps(template)
@@ -144,19 +145,152 @@ class database_checker:
         f.close()
         print(str)
         self.metrics_alarm_database_dict = json.loads(str)
+    
+    def get_ip_size(self,db_name:str):
+        query_sql = 'SELECT count(public_ips) as res from ips_table;'
+        res = myquery.query_database(db_name,query_sql)[0]['res']
+        return res
+
+    def do_check_consensus_succ_rate(self,db_name:str) -> list:
+        gmt_time = int(time.time()/300)*300
+        begin_gmt_time = gmt_time-25*3600
+        end_gmt_time = gmt_time-3600
+        ip_list_size = self.get_ip_size(db_name)
+        print(ip_list_size)
+        begin_item = []
+        end_item = []
+        for _ in range(0, 47):
+            begin_gmt_time += 1800
+            begin_sql = 'SELECT public_ip,tag,count,value from metrics_counter where category = "cons" and tag in ("tableblock_leader_finish_succ","tableblock_leader_finish_fail") and send_timestamp<{0} group by public_ip,tag;'.format(
+                begin_gmt_time)
+            begin_item = myquery.query_database(db_name, begin_sql)
+            if(len(begin_item) == 2*ip_list_size):
+                break
+        for _ in range(0, 47):
+            end_gmt_time -= 1800
+            end_sql = 'SELECT public_ip,tag,count,value from metrics_counter where category = "cons" and tag in ("tableblock_leader_finish_succ","tableblock_leader_finish_fail") and send_timestamp>{0} group by public_ip,tag;'.format(
+                end_gmt_time)
+            end_item = myquery.query_database(db_name, end_sql)
+            if(len(end_item) == 2*ip_list_size):
+                break
+
+        res_item = {}
+        for item in begin_item:
+            public_ip = item['public_ip']
+            tag = item['tag']
+            count = item['count']
+            value = item['value']
+            if public_ip not in res_item:
+                res_item[public_ip] = {
+                    'begin_succ':0,
+                    'end_succ':0,
+                    'begin_fail':0,
+                    'end_fail':0
+                }
+            if tag == 'tableblock_leader_finish_succ':
+                res_item[public_ip]['begin_succ'] = value
+            if tag == 'tableblock_leader_finish_fail':
+                res_item[public_ip]['begin_fail'] = value
+        for item in end_item:
+            public_ip = item['public_ip']
+            tag = item['tag']
+            count = item['count']
+            value = item['value']
+            if public_ip not in res_item:
+                res_item[public_ip] = {
+                    'begin_succ':0,
+                    'end_succ':0,
+                    'begin_fail':0,
+                    'end_fail':0
+                }
+            if tag == 'tableblock_leader_finish_succ':
+                res_item[public_ip]['end_succ'] = value
+            if tag == 'tableblock_leader_finish_fail':
+                res_item[public_ip]['end_fail'] = value
+        
+        cal_res = {}
+        for _public_ip,_data in res_item.items():
+            cal_res[_public_ip] = {
+                'succ_delta':0,
+                'fail_delta':0,
+            }
+            if _data['end_succ'] < _data['begin_succ'] or _data['end_fail'] < _data['begin_fail']:
+                cal_res[_public_ip]['succ_delta'] = _data['end_succ']
+                cal_res[_public_ip]['fail_delta'] = _data['end_fail']
+            else:
+                cal_res[_public_ip]['succ_delta'] = _data['end_succ'] - _data['begin_succ']
+                cal_res[_public_ip]['fail_delta'] = _data['end_fail'] - _data['begin_fail']
+        
+        res_list = []
+        res_perfix = '#### 共识成功率检测结果\n 时间范围：[{0} - {1}] \n env: {2} \n'.format(time.strftime(format_regex, time.localtime(begin_gmt_time)),time.strftime(format_regex, time.localtime(end_gmt_time)),db_name)
+        unqualified_list_perfix = " unqualified_list: [ip rate succ/all]"
+        unqualified_list = unqualified_list_perfix
+        list_cnt = 0
+        first_flag = True
+        for _public_ip,_cal_res in cal_res.items():
+            if _cal_res['succ_delta'] == 0 and _cal_res['fail_delta'] == 0: 
+                print("continue")
+                continue
+            cal_rate = round(_cal_res['succ_delta'] / (_cal_res['succ_delta']+_cal_res['fail_delta']) * 100,2)
+            if cal_rate < 98:
+                unqualified_list = unqualified_list + "\n - {0} : {1}% ({2}/{3})".format(
+                    _public_ip, cal_rate, _cal_res['succ_delta'], _cal_res['succ_delta']+_cal_res['fail_delta'])
+                list_cnt +=1
+            else:
+                print('{0} pass : {1}% ({2}/{3})'.format(_public_ip,cal_rate, _cal_res['succ_delta'], _cal_res['succ_delta']+_cal_res['fail_delta']))
+            if list_cnt >= 15:
+                if first_flag:
+                    res_list.append(res_perfix + unqualified_list)
+                    first_flag = False
+                else:
+                    res_list.append(unqualified_list)
+                unqualified_list = unqualified_list_perfix
+                list_cnt = 0
+        if first_flag:
+            res_list.append(res_perfix + unqualified_list)
+        else:
+            res_list.append(unqualified_list)
+
+        return res_list
+
+    def do_sumarize_report(self,db_name:str):
+        content_list = []
+        for _r in self.do_check_consensus_succ_rate(db_name):
+            content_list.append(_r)
+        return content_list
+
+    def check_yesterday_db(self,database_list:list):
+        tz = datetime.timezone(datetime.timedelta(hours=0))
+        date_now = datetime.datetime.now(tz)
+        last_date_day = date_now.date()-datetime.timedelta(days=1)
+        str_date = str(last_date_day).replace('-', '')
+        t_hour = date_now.hour
+        if(t_hour == 1):
+            # check at every day 1:00UTC (+8:00 = 9:00am)
+            for _database in database_list:
+                _database_name = _database['name']
+                if(_database_name.endswith(str_date) and not self.metrics_alarm_database_dict[_database_name]["done_report"]):
+                    content_list = self.do_sumarize_report(_database_name)
+                    for each_content in content_list:
+                        send_alarm_to_dingding('info', each_content)
+                        time.sleep(1)
+                    self.metrics_alarm_database_dict[_database_name]["done_report"] = 1
+
+        return
 
 
     def check_database(self, database_list: list):
         for _database in database_list:
             _database_name = _database['name']
             _database_time = _database['time']
-
+ 
             if _database_name not in self.metrics_alarm_database_dict:
                 # each database info template
                 self.metrics_alarm_database_dict[_database_name] = {
                     "alarm_size": 0,
+                    "done_report": 0,
                 }
-                content = "\n[info]new database {0} was created at time {1}".format(
+                content = "\n  INFO  \n\n  新数据库创建  \n {0} was created at time {1}".format(
                     _database_name, _database_time)
                 send_alarm_to_dingding('info', content)
         n_database_l = [_d['name'] for _d in database_list]
@@ -165,7 +299,7 @@ class database_checker:
             if _e_database not in n_database_l:
                 del_list.append(_e_database)
                 
-                content = "\n[info]database {0} was deleted ".format(
+                content = "\n  INFO  \n\n  数据库被清理  \n {0} was deleted".format(
                     _e_database)
                 send_alarm_to_dingding('info', content)
         print(del_list)
@@ -185,7 +319,7 @@ class database_checker:
             old_size = self.metrics_alarm_database_dict[_database_name]["alarm_size"]
 
             if size > old_size:
-                content = "\n{0} metrics_alarm generated in database:[{1}]".format(
+                content = "\n  ALARM  \n\n  新增 {0} 条 metrics_alarm \n database:[{1}]".format(
                     size-old_size, _database_name)
                 send_alarm_to_dingding('alarm', content)
             else:
@@ -233,6 +367,7 @@ def run():
         database_list = database_time()
         db_c.check_database(database_list)
         db_c.check_metrics_alarm(database_list)
+        db_c.check_yesterday_db(database_list)
         db_c.dump_to_file()
         time.sleep(check_interval)
 
