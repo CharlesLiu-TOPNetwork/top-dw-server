@@ -54,8 +54,8 @@ def alarm_report():
 def run():
     slog.info('proxy start...')
     slogging.start_log_monitor()
-    app.run(host="127.0.0.1", port= 9092, debug=True)
-    #app.run()
+    # app.run(host="127.0.0.1", port= 9092, debug=True)
+    app.run()
     return
 
 

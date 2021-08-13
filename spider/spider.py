@@ -37,7 +37,7 @@ check_interval = 60
 restart_dashboard_interval = 180 # every three hours
 
 consumer_process_count = 22
-proxy_process_count = 2
+proxy_gunicorn_process_count = 5
 dash_process_count = 2
 
 project_path = '/home/charles/project/top-dw-server'
@@ -360,7 +360,7 @@ def run():
     while True:
         
         process_c.check_true_or_restart('consumer/','main_consumer.py',consumer_process_count,'nohup python3 main_consumer.py -t test & \n')
-        process_c.check_true_or_restart('proxy/','proxy.py',proxy_process_count,'nohup python3 proxy.py & \n')
+        process_c.check_true_or_restart('proxy/','gunicorn',proxy_gunicorn_process_count,'nohup gunicorn -w 4 -b 127.0.0.1:9092 proxy:app & \n')
         process_c.check_true_or_restart('dashboard/','dash.py',dash_process_count,'nohup python3 dash.py & \n')
         process_c.restart_dash('dashboard/','dash.py','nohup python3 dash.py & \n')
 
