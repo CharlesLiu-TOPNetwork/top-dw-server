@@ -246,9 +246,9 @@ class database_checker:
                     res_list.append(unqualified_list)
                 unqualified_list = unqualified_list_perfix
                 list_cnt = 0
-        if first_flag:
+        if list_cnt and first_flag:
             res_list.append(res_perfix + unqualified_list)
-        else:
+        elif list_cnt:
             res_list.append(unqualified_list)
 
         return res_list
