@@ -34,6 +34,16 @@ class MetricsTimerConsumer(object):
             "min_time": 0,
             "avg_time": 0
         }
+        
+        self.cache_num = 10
+        self.timer_insert_cache = {
+        }
+        self.tag_cache = {
+          # env: [(category,tag)]
+        }
+        self.ip_cache = {
+        }
+
 
         return
 
@@ -107,13 +117,35 @@ class MetricsTimerConsumer(object):
         item['min_time'] = packet.get('min_time')
         item['avg_time'] = packet.get('avg_time')
 
-        self.mysql_db.insert_into_db(db, "metrics_timer", item)
 
+        if db not in self.timer_insert_cache:
+            self.timer_insert_cache[db] = []
+        self.timer_insert_cache[db].append(item)
+
+        if db not in self.tag_cache:
+            self.tag_cache[db] = []
+        full_tag = packet.get('category')+'__'+packet.get('tag')
+        if full_tag not in self.tag_cache[db]:
+            self.tag_cache[db].append(full_tag)
+            self.mysql_db.insert_ingore_into_db(db, "tags_table", {'category': packet.get('category'), 'tag': packet.get('tag'), 'type': "timer"})
         
-        tags = {}
-        tags['category'] = packet.get('category')
-        tags['tag'] = packet.get('tag')
-        tags['type'] = "timer"
-        self.mysql_db.insert_ingore_into_db(db, "tags_table", tags)
+        if db not in self.ip_cache:
+            self.ip_cache[db] = []
+        if packet.get('public_ip') not in self.ip_cache[db]:
+            self.ip_cache[db].append(packet.get('public_ip'))
+            self.mysql_db.insert_ingore_into_db(db,"ips_table",{'public_ips':packet.get('public_ip')})
+
+        if len(self.timer_insert_cache[db]) > self.cache_num:
+            self.mysql_db.multi_insert_into_db(db,"metrics_timer",self.timer_insert_cache[db])
+            self.timer_insert_cache[db] = []
+
+
+        # self.mysql_db.insert_into_db(db, "metrics_timer", item)
+
+        # tags = {}
+        # tags['category'] = packet.get('category')
+        # tags['tag'] = packet.get('tag')
+        # tags['type'] = "timer"
+        # self.mysql_db.insert_ingore_into_db(db, "tags_table", tags)
 
         return True

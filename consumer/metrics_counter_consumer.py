@@ -32,6 +32,14 @@ class MetricsCounterConsumer(object):
             "count": 0,
             "value": 0
         }
+        self.cache_num = 100
+        self.counter_insert_cache = {
+        }
+        self.tag_cache = {
+          # env: [(category,tag)]
+        }
+        self.ip_cache = {
+        }
 
         return
 
@@ -102,17 +110,39 @@ class MetricsCounterConsumer(object):
         item['count'] = packet.get('count')
         item['value'] = packet.get('value')
 
-        self.mysql_db.insert_into_db(db, "metrics_counter", item)
 
-        ips = {}
-        ips['public_ips'] = packet.get('public_ip')
-        self.mysql_db.insert_ingore_into_db(db, "ips_table", ips)
+        if db not in self.counter_insert_cache:
+            self.counter_insert_cache[db] = []
+        self.counter_insert_cache[db].append(item)
 
-        tags = {}
-        tags['category'] = packet.get('category')
-        tags['tag'] = packet.get('tag')
-        tags['type'] = "counter"
-        self.mysql_db.insert_ingore_into_db(db, "tags_table", tags)
+        if db not in self.tag_cache:
+            self.tag_cache[db] = []
+        full_tag = packet.get('category')+'__'+packet.get('tag')
+        if full_tag not in self.tag_cache[db]:
+            self.tag_cache[db].append(full_tag)
+            self.mysql_db.insert_ingore_into_db(db, "tags_table", {'category': packet.get('category'), 'tag': packet.get('tag'), 'type': "counter"})
+        
+        if db not in self.ip_cache:
+            self.ip_cache[db] = []
+        if packet.get('public_ip') not in self.ip_cache[db]:
+            self.ip_cache[db].append(packet.get('public_ip'))
+            self.mysql_db.insert_ingore_into_db(db,"ips_table",{'public_ips':packet.get('public_ip')})
+
+        if len(self.counter_insert_cache[db]) > self.cache_num:
+            self.mysql_db.multi_insert_into_db(db,"metrics_counter",self.counter_insert_cache[db])
+            self.counter_insert_cache[db] = []
+
+        # self.mysql_db.insert_into_db(db, "metrics_counter", item)
+
+        # ips = {}
+        # ips['public_ips'] = packet.get('public_ip')
+        # self.mysql_db.insert_ingore_into_db(db, "ips_table", ips)
+
+        # tags = {}
+        # tags['category'] = packet.get('category')
+        # tags['tag'] = packet.get('tag')
+        # tags['type'] = "counter"
+        # self.mysql_db.insert_ingore_into_db(db, "tags_table", tags)
 
 
         return True

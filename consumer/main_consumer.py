@@ -36,7 +36,7 @@ def run(alarm_type, alarm_env = 'test'):
     global mq
     all_queue_key = mq.get_all_queue_keys()  # set of queue_key
     qkey_map = {
-            'p2p_gossip': [],
+            # 'p2p_gossip': [],
             'metrics_timer':[],
             'metrics_flow':[],
             'metrics_counter':[],
@@ -52,8 +52,8 @@ def run(alarm_type, alarm_env = 'test'):
             }
 
     for qkey in all_queue_key:
-        if qkey.find('p2p_gossip') != -1:
-            qkey_map['p2p_gossip'].append(qkey)
+        # if qkey.find('p2p_gossip') != -1:
+        #     qkey_map['p2p_gossip'].append(qkey)
         if qkey.find('metrics_timer')!=-1:
             qkey_map['metrics_timer'].append(qkey)
         if qkey.find('metrics_flow')!=-1:

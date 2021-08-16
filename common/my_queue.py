@@ -16,23 +16,39 @@ class RedisQueue(object):
         self.all_queue_keys_set = set()  # keep all queue_key in cache
 
         # add already known type
-        for i in range(0, self.alarm_type_queue_num):
-            qkey_perf = '{0}:p2p_gossip:{1}'.format(self.queue_key_base,i)
-            self.myredis.sadd(self.all_queue_keys,qkey_perf)
-            self.all_queue_keys_set.add(qkey_perf)
-        for i in range(0, self.alarm_type_queue_num):
-            qkey_perf = '{0}:metrics_timer:{1}'.format(self.queue_key_base,i)
-            self.myredis.sadd(self.all_queue_keys,qkey_perf)
-            self.all_queue_keys_set.add(qkey_perf)
-        for i in range(0, self.alarm_type_queue_num):
-            qkey_perf = '{0}:metrics_flow:{1}'.format(self.queue_key_base,i)
-            self.myredis.sadd(self.all_queue_keys,qkey_perf)
-            self.all_queue_keys_set.add(qkey_perf)
-        for i in range(0, self.alarm_type_queue_num):
-            qkey_perf = '{0}:metrics_counter:{1}'.format(self.queue_key_base,i)
-            self.myredis.sadd(self.all_queue_keys,qkey_perf)
-            self.all_queue_keys_set.add(qkey_perf)
+        # for i in range(0, self.alarm_type_queue_num):
+        #     qkey_perf = '{0}:p2p_gossip:{1}'.format(self.queue_key_base,i)
+        #     self.myredis.sadd(self.all_queue_keys,qkey_perf)
+        #     self.all_queue_keys_set.add(qkey_perf)
+
+        # for i in range(0, self.alarm_type_queue_num):
+        #     qkey_perf = '{0}:metrics_timer:{1}'.format(self.queue_key_base,i)
+        #     self.myredis.sadd(self.all_queue_keys,qkey_perf)
+        #     self.all_queue_keys_set.add(qkey_perf)
+        # for i in range(0, self.alarm_type_queue_num):
+        #     qkey_perf = '{0}:metrics_flow:{1}'.format(self.queue_key_base,i)
+        #     self.myredis.sadd(self.all_queue_keys,qkey_perf)
+        #     self.all_queue_keys_set.add(qkey_perf)
+        # for i in range(0, self.alarm_type_queue_num):
+        #     qkey_perf = '{0}:metrics_counter:{1}'.format(self.queue_key_base,i)
+        #     self.myredis.sadd(self.all_queue_keys,qkey_perf)
+        #     self.all_queue_keys_set.add(qkey_perf)
+
+        # metrics_timer
+        qkey_perf = '{0}:metrics_timer'.format(self.queue_key_base)
+        self.myredis.sadd(self.all_queue_keys,qkey_perf)
+        self.all_queue_keys_set.add(qkey_perf)
         
+        # metrics_flow
+        qkey_perf = '{0}:metrics_flow'.format(self.queue_key_base)
+        self.myredis.sadd(self.all_queue_keys,qkey_perf)
+        self.all_queue_keys_set.add(qkey_perf)
+        
+        # metrics_counter
+        qkey_perf = '{0}:metrics_counter'.format(self.queue_key_base)
+        self.myredis.sadd(self.all_queue_keys,qkey_perf)
+        self.all_queue_keys_set.add(qkey_perf)
+
         # vnode_status
         qkey_perf = '{0}:vnode_status'.format(self.queue_key_base)
         self.myredis.sadd(self.all_queue_keys,qkey_perf)
@@ -87,6 +103,9 @@ class RedisQueue(object):
         msg_hash = None
         if alarm_type == 'p2p_gossip':
             msg_hash = int(list(alarm_item.get('packet').get('content').keys())[0]) 
+        else:
+            return '{0}:{1}'.format(self.queue_key_base,alarm_type)
+        '''
         elif alarm_type in ['vnode_status','xsync_interval','kadinfo','p2pbroadcast','txpool_state','txpool_receipt','txpool_cache','metrics_alarm','metrics_array_counter'] :
             return '{0}:{1}'.format(self.queue_key_base,alarm_type)
         else:
@@ -100,6 +119,7 @@ class RedisQueue(object):
 
         # slog.debug('get qkey:{0}'.format(qkey))
         return qkey 
+        '''
 
     def qsize(self, queue_key_list):
         if not queue_key_list:

@@ -36,7 +36,7 @@ my_ip = get_local_ip()
 check_interval = 60
 restart_dashboard_interval = 180 # every three hours
 
-consumer_process_count = 22
+consumer_process_count = 13
 proxy_gunicorn_process_count = 5
 dash_process_count = 2
 

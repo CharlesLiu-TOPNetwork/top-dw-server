@@ -347,6 +347,20 @@ class Store(str):
         self.cursor = self.db.cursor()
         return
 
+    def store_multi_insert(self, table, item: list):
+        if not item:
+            return ValueError('item error')
+        self.check_timeout()
+
+        size = len(item[0])
+        keys = item[0].keys()
+        safe_keys = ['`%s`' % k for k in keys]
+        sql = 'INSERT INTO `%s`(%s) VALUES (%s)' % (table , ','.join(safe_keys),'%s' + ',%s' * (size - 1))
+        val = tuple(tuple(v for _,v in each.items()) for each in item)
+        # print(sql,val)
+        last_id = self.cursor.executemany(sql, val)
+        return last_id
+
     def store_insert(self, table, item: dict):
         if not item:
             return ValueError('item error')

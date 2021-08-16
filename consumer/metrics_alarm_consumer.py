@@ -31,6 +31,14 @@ class MetricsAlarmConsumer(object):
             "tag": "",
             "kv_content": "",
         }
+        # self.cache_num = 1
+        # self.alarm_insert_cache = {
+        # }
+        self.tag_cache = {
+          # env: [(category,tag)]
+        }
+        # self.ip_cache = {
+        # }
 
         return
 
@@ -111,10 +119,18 @@ class MetricsAlarmConsumer(object):
         item['kv_content'] = json.dumps(packet.get('kv_content'), separators=(',', ':'))
         self.mysql_db.insert_into_db(db, "metrics_alarm", item)
 
-        tags = {}
-        tags['category'] = packet.get('category')
-        tags['tag'] = packet.get('tag')
-        tags['type'] = "alarm"
-        self.mysql_db.insert_ingore_into_db(db, "tags_table", tags)
+
+        if db not in self.tag_cache:
+            self.tag_cache[db] = []
+        full_tag = packet.get('category')+'__'+packet.get('tag')
+        if full_tag not in self.tag_cache[db]:
+            self.tag_cache[db].append(full_tag)
+            self.mysql_db.insert_ingore_into_db(db, "tags_table", {'category': packet.get('category'), 'tag': packet.get('tag'), 'type': "alarm"})
+        
+        # tags = {}
+        # tags['category'] = packet.get('category')
+        # tags['tag'] = packet.get('tag')
+        # tags['type'] = "alarm"
+        # self.mysql_db.insert_ingore_into_db(db, "tags_table", tags)
 
         return True
