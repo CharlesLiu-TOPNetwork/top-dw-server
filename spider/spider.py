@@ -50,7 +50,7 @@ alarm_template = {
                  "text": "",
              },
              "at": {
-                 "atUserIds": ['CharlesLiu'],
+                 "atUserIds": [],
                  "isAtAll": False
              }},
     "alarm": {"msgtype": "markdown",
@@ -60,7 +60,7 @@ alarm_template = {
               },
               "at": {
                   "atUserIds": [],
-                  "isAtAll": True
+                  "isAtAll": False
               }},
     "info": {"msgtype": "markdown",
              "markdown": {
@@ -99,6 +99,7 @@ def send_alarm_to_dingding(type: str, content):
 class process_checker:
     def __init__(self):
         self.inner_restart_dashboard_interval = 0 # counter
+        self.disk_usage_rate = 0
 
     def check_true_or_restart(self,component_path:str,process_name:str,expected_num:int,start_cmd:str):
         res = subprocess.getoutput('ps -ef |grep {0} | grep -v grep | grep -v nohup -c'.format(process_name))
@@ -135,6 +136,17 @@ class process_checker:
         else:
             self.inner_restart_dashboard_interval +=1
 
+        return
+
+    def check_disk_free(self,disk_name):
+        res = int(subprocess.getoutput('df -mh | grep %s |awk -F \' \' \'{print $5}\' ' % disk_name ).strip('%'))
+        if res > 80 and res != self.disk_usage_rate:
+            content = "\n[info] disk space less than 20%! Already use " + \
+                str(res) + " %"
+            send_alarm_to_dingding("info",content)
+        
+        self.disk_usage_rate = res
+        
         return
 
 class database_checker:
@@ -362,6 +374,7 @@ def run():
         process_c.check_true_or_restart('proxy/','gunicorn',proxy_gunicorn_process_count,'nohup gunicorn -w 4 -b 127.0.0.1:9092 proxy:app & \n')
         process_c.check_true_or_restart('dashboard/','dash.py',dash_process_count,'nohup python3 dash.py & \n')
         process_c.restart_dash('dashboard/','dash.py','nohup python3 dash.py & \n')
+        process_c.check_disk_free('vda1')
 
         database_list = database_time()
         db_c.check_database(database_list)
