@@ -118,13 +118,12 @@ class process_checker:
             print(res)
 
     def restart_dash(self,component_path:str,process_name:str,start_cmd:str):
-
+        res = subprocess.call('cd {0} && date | xargs echo > proxy/log/topargus-proxy.log'.format(project_path),shell=True)
+        print(res)
         if self.inner_restart_dashboard_interval == restart_dashboard_interval:
             # print(self.inner_restart_dashboard_interval)
             self.inner_restart_dashboard_interval = 0
             
-            res = subprocess.call('cd {0} && date | xargs echo > keep_alive_tools/nohup.out'.format(project_path),shell=True)
-            print(res)
             print("try kill && restart dashboard  && clear log.")
             
             cmd_str = "ps -ef |grep " + process_name + " | grep -v grep | awk -F ' ' '{print $2}'| xargs kill -9"

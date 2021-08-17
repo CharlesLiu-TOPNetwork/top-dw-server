@@ -32,7 +32,7 @@ class MetricsCounterConsumer(object):
             "count": 0,
             "value": 0
         }
-        self.cache_num = 100
+        self.cache_num = 1000
         self.counter_insert_cache = {
         }
         self.tag_cache = {

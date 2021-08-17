@@ -162,7 +162,7 @@ class RedisQueue(object):
             slog.warn("queue_key:{0} size {1} beyond 1000000".format(qkey, size))
             return
         self.myredis.lpush(qkey, json.dumps(item))
-        slog.debug("put_queue alarm:{0} in queue {1}, now size is {2}".format(json.dumps(item), qkey, self.qsize([qkey])))
+        # slog.debug("put_queue alarm:{0} in queue {1}, now size is {2}".format(json.dumps(item), qkey, self.qsize([qkey])))
         return
 
     def get_queue(self, queue_key_list):
