@@ -75,38 +75,194 @@ def hello_world():
     return '{0} Hello, World!'.format(auth.username())
 
 
-# !?[unfinished][raw_data_api]
+# ![for_QA][raw_data_api][help_page]
+@app.route('/dw-api/help',methods=['GET'])
+@app.route('/dw-api/help/',methods=['GET'])
+def raw_query_help():
+    return render_template('query_center/raw_query_help.html')
+
+# ![for_QA][raw_data_api]
+@app.route('/dw-api/database',methods=['GET'])
+@app.route('/dw-api/database/',methods=['GET'])
+def raw_query_database():
+    database_list = database_time()
+    database_list = [d['name'] for d in database_list]
+    return jsonify(database_list)
+
+# ![for_QA][raw_data_api]
+@app.route('/dw-api/category',methods=['GET'])
+@app.route('/dw-api/category/',methods=['GET'])
+def raw_query_category():
+    env = request.args.get('env') or None
+    type = request.args.get('type') or None
+    
+    if not env:
+        return "plz set env"
+    if type and type not in ['array_counter','alarm','counter','timer','flow']:
+        return 'type should be one of [array_counter / alarm / counter / timer / flow]'
+    
+    query_sql = 'SELECT DISTINCT category FROM tags_table '
+    if type :
+        query_sql = query_sql + 'WHERE type = "' + type + '" ;'
+    else:
+        query_sql = query_sql + ';'
+    query_items = myquery.query_database(env,query_sql)
+    res_list = []
+    for item in query_items:
+        res_list.append(item['category'])
+    
+    return jsonify(res_list)
+
+
+# ![for_QA][raw_data_api]
+@app.route('/dw-api/tag',methods=['GET'])
+@app.route('/dw-api/tag/',methods=['GET'])
+def raw_query_tag():
+    env = request.args.get('env') or None
+    category = request.args.get('category') or None
+    type = request.args.get('type') or None
+    
+    if not env:
+        return "plz set env"
+    if not category:
+        return "plz set category"
+    if type not in ['array_counter','alarm','counter','timer','flow']:
+        return 'plz set type [array_counter / alarm / counter / timer / flow]'
+
+    query_sql = 'SELECT DISTINCT tag FROM tags_table where category = "' + category + '" and type = "' + type + '" ;'
+    query_items = myquery.query_database(env,query_sql)
+    # print(query_sql,query_items)
+    res_list = []
+    for item in query_items:
+        res_list.append(item['tag'])
+    
+    return jsonify(res_list)
+
+
+# ![for_QA][raw_data_api]
+@app.route('/dw-api/txpool',methods=['GET'])
+@app.route('/dw-api/txpool/',methods=['GET'])
+def raw_query_txpool():
+    env = request.args.get('env') or None
+    ip = request.args.get('ip') or None
+    type = request.args.get('type') or None
+
+    if not env:
+        return "plz set env"
+    if not ip:
+        return "plz set ip"
+    if not type or type not in ['state', 'receipt', 'cache']:
+        return "plz set type [ state / receipt / cache ]"
+    
+    # check db exist
+    database_list = [k['name'] for k in database_time()]
+    if env not in database_list:
+        return "env not exist"
+
+    sql = ''
+    sql_template = 'SELECT * FROM (( SELECT * FROM txpool_'+ type +' {0} ORDER BY send_timestamp DESC ) AS tmp ) GROUP BY public_ip;'
+
+    if ip == 'all' :
+        sql = sql_template.format('')
+    else:
+        # check ip exist
+        query_ip_sql = 'SELECT public_ips FROM ips_table;'
+        query_items = myquery.query_database(env, query_ip_sql)
+        ip_list = []
+        for item in query_items:
+            ip_list.append(item['public_ips'])
+        if ip not in ip_list:
+            return "ip {0} not exist in {1}".format(ip, env)
+        sql = sql_template.format('WHERE public_ip = "'+ ip +'"')
+    
+    # print(sql)
+    
+    return jsonify(myquery.query_database(env,sql)) 
+
+
+
+# ![for_QA][inner_logcal][raw_data_api]
+def raw_query_metrics_all_ip(env,type,category,tag):
+    if type == "counter":
+        sql = 'SELECT public_ip, send_timestamp, count, value FROM (( SELECT * FROM metrics_counter WHERE category = "{0}" AND tag = "{1}" ORDER BY send_timestamp DESC ) AS tmp ) GROUP BY	public_ip;'.format(category,tag)
+    elif type == "timer":
+        sql = 'SELECT public_ip, send_timestamp, count, max_time, min_time, avg_time FROM (( SELECT * FROM metrics_timer WHERE category = "{0}" AND tag = "{1}" ORDER BY send_timestamp DESC ) AS tmp ) GROUP BY public_ip;'.format(category,tag)
+    elif type == "flow":
+        sql = 'SELECT public_ip, send_timestamp, count, max_flow, min_flow, sum_flow, avg_flow, tps_flow, tps FROM (( SELECT * FROM metrics_flow WHERE category = "{0}" AND tag = "{1}" ORDER BY send_timestamp DESC ) AS tmp ) GROUP BY public_ip;'.format(category,tag)
+    else:
+        return 'wrong type for now'
+    
+    return jsonify(myquery.query_database(env,sql))
+
+# ![for_QA][raw_data_api]
 @app.route('/dw-api/metrics',methods=['GET'])
 @app.route('/dw-api/metrics/',methods=['GET'])
 # @auth.login_required
-def query_metrics():
+def raw_query_metrics():
     env = request.args.get('env') or None
     ip = request.args.get('ip') or None
     type = request.args.get('type') or None
     category = request.args.get('category') or None
     tag = request.args.get('tag') or None
+    latest = request.args.get('latest') or None
+
+    if not env:
+        return "plz set env"
+    if not ip:
+        return "plz set ip"
+    if not type or type not in ['counter', 'timer', 'flow']:
+        return "plz set type [ counter / timer / flow ]"
+    if not category or not tag:
+        return "plz set category && tag"
+    if latest and latest not in ['true','false']:
+        return "plz set latest [ true(default) / false ]"
+
+    # check db exist
+    database_list = [k['name'] for k in database_time()]
+    if env not in database_list:
+        return "env not exist"
+
+    # check category_tag exist
+    query_sql = 'SELECT DISTINCT tag FROM tags_table where category = "' + category + '" and type = "' + type + '" ;'
+    query_items = myquery.query_database(env, query_sql)
+    tag_list = []
+    for item in query_items:
+        tag_list.append(item['tag'])
+    if tag not in tag_list:
+        return "category: [ {0} ] tag: [ {1} ] not exist in db [ {2} ]".format(category, tag, env)
+
+    # check ip exist
+    if ip == 'all' :
+        return raw_query_metrics_all_ip(env,type,category,tag)
+    query_ip_sql = 'SELECT public_ips FROM ips_table;'
+    query_items = myquery.query_database(env, query_ip_sql)
+    ip_list = []
+    for item in query_items:
+        ip_list.append(item['public_ips'])
+    if ip not in ip_list:
+        return "ip {0} not exist in {1}".format(ip, env)
 
     sql = ''
-    # http://161.35.114.185/dw-api/metrics/?env=local_test&ip=192.168.181.128&type=counter&category=vhost&tag=recv_msg
-    # http://161.35.114.185/dw-api/metrics/?env=local_test&ip=192.168.181.128&type=timer&category=vhost&tag=handle_data_filter
-    # http://161.35.114.185/dw-api/metrics/?env=local_test&ip=192.168.181.128&type=flow&category=vhost&tag=handle_data_ready_called
 
     if type == "counter":
         #SELECT send_timestamp,count,value FROM metrics_counter WHERE public_ip = "192.168.181.128" AND category = "vhost" AND tag = "recv_msg";
-        sql = 'SELECT send_timestamp,count,value FROM metrics_counter WHERE public_ip = "{0}" AND category = "{1}" AND tag = "{2}";'.format(
+        sql = 'SELECT send_timestamp,count,value FROM metrics_counter WHERE public_ip = "{0}" AND category = "{1}" AND tag = "{2}" ORDER BY send_timestamp '.format(
             ip, category, tag)
     elif type == "timer":
         #SELECT send_timestamp,count,max_time,min_time,avg_time FROM metrics_timer WHERE public_ip = "192.168.181.128" AND category = "vhost" AND tag = "handle_data_filter";
-        sql = 'SELECT send_timestamp,count,max_time,min_time,avg_time FROM metrics_timer WHERE public_ip = "{0}" AND category = "{1}" AND tag = "{2}";'.format(
+        sql = 'SELECT send_timestamp,count,max_time,min_time,avg_time FROM metrics_timer WHERE public_ip = "{0}" AND category = "{1}" AND tag = "{2}" ORDER BY send_timestamp '.format(
             ip, category, tag)
     elif type == "flow":
         #SELECT send_timestamp,count,max_flow,min_flow,sum_flow,avg_flow,tps_flow,tps FROM metrics_flow WHERE public_ip = "192.168.181.128" AND category = "vhost" AND tag = "handle_data_ready_called";
-        sql = 'SELECT send_timestamp,count,max_flow,min_flow,sum_flow,avg_flow,tps_flow,tps FROM metrics_flow WHERE public_ip = "{0}" AND category = "{1}" AND tag = "{2}";'.format(
+        sql = 'SELECT send_timestamp,count,max_flow,min_flow,sum_flow,avg_flow,tps_flow,tps FROM metrics_flow WHERE public_ip = "{0}" AND category = "{1}" AND tag = "{2}" ORDER BY send_timestamp '.format(
             ip, category, tag)
     else:
         return 'wrong type for now'
     
-    slog.info(sql)
+    if latest and latest == 'false':
+        sql = sql + ';'
+    else:
+        sql = sql + 'DESC LIMIT 1 ;'
 
     return jsonify(myquery.query_database(env,sql))
 
@@ -282,7 +438,7 @@ def query_array_counter(database,category,tag):
                 if ts in res_item[_ip]:
                     _list.append(res_item[_ip][ts][_key])
                 else:
-                    _list.append(0)
+                    _list.append(None)
     
     # print(data_lists)
 
@@ -349,7 +505,7 @@ def query_counter(database, category, tag):
                 if ts in res_item[_ip]:
                     _list.append(res_item[_ip][ts][_key])
                 else:
-                    _list.append(0)
+                    _list.append(None)
 
     # print(data_lists)
     res = render_template('joint/body_div_line.html', name=category+tag)
@@ -453,7 +609,7 @@ def query_timer(database, category, tag):
                 if ts in res_item[_ip]:
                     _list.append(res_item[_ip][ts][_key])
                 else:
-                    _list.append(0)
+                    _list.append(None)
 
     # print(data_lists)
     res = render_template('joint/body_div_line.html', name=category+tag)
@@ -622,7 +778,17 @@ def query_ip_category_tag_metrics_counter():
 def format_data_list_to_str(data_list: dict):
     res = {}
     for _ip, _list in data_list.items():
-        res_list_str = ",".join([str(x) if x else ' ' for x in _list])
+        x_str_list = []
+        for i,x in enumerate(_list):
+            if x is None:
+                x_str_list.append('')
+            elif i != 0 and x == 0 and _list[i-1] == 0 and i != len(_list)-1:
+                x_str_list.append('')
+            else:
+                x_str_list.append(str(x))
+        res_list_str = ",".join(x_str_list)
+            
+        # res_list_str = ",".join([str(x) if x else ' ' for x in _list])
         res_list_str = '[' + res_list_str + ']'
         res[_ip] = res_list_str
     return res
@@ -1135,6 +1301,32 @@ def query_xblockstore_hit():
     return render_template('tmp_test.html')
     return res_page
 
+# ![api] set database manager info
+@app.route('/update_db_reserve',methods=['GET'])
+@app.route('/update_db_reserve/',methods=['GET'])
+def update_db_reserve():
+    database = request.args.get('database') or None
+    val = request.args.get('val') or None
+    query_sql = 'UPDATE `db_setting` SET `reserve` ="{0}" WHERE db_name = "{1}" ;'.format(val,database)
+    myquery.query_database('empty',query_sql)
+    print(query_sql)
+    return "ok"
+
+# ![api] get database manager info
+@app.route('/query_db_manager_info',methods=['GET'])
+@app.route('/query_db_manager_info/',methods=['GET'])
+def query_db_manager_info():
+    query_sql = "select * from db_setting"
+    query_items = myquery.query_database('empty',query_sql)
+    return jsonify(query_items)
+
+# ![page] manager database info
+@app.route('/db_manager',methods=['GET'])
+@app.route('/db_manager/',methods=['GET'])
+def db_manager():
+    # query_sql = "select * from db_setting"
+    # query_items = myquery.query_database('empty',query_sql)
+    return render_template('query_center/db_manager.html.j2')
 
 # ![api] query xsync_interval
 @app.route('/query_xsync_interval',methods=['GET'])

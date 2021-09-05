@@ -39,6 +39,7 @@ restart_dashboard_interval = 180 # every three hours
 consumer_process_count = 13
 proxy_gunicorn_process_count = 5
 dash_process_count = 2
+disk_need_clen = False
 
 project_path = '/home/charles/project/top-dw-server'
 format_regex = '%Y-%m-%d %H:%M:%S'
@@ -139,9 +140,12 @@ class process_checker:
         return
 
     def check_disk_free(self,disk_name):
+        global disk_need_clen
         res = int(subprocess.getoutput('df -mh | grep %s |awk -F \' \' \'{print $5}\' ' % disk_name ).strip('%'))
-        if res > 80 and res != self.disk_usage_rate:
-            content = "\n[info] disk space less than 20%! Already use " + \
+        if res > 85:
+            disk_need_clen = True
+        if res > 90 and res != self.disk_usage_rate:
+            content = "\n[info] disk space less than 10%! Already use " + \
                 str(res) + " %"
             send_alarm_to_dingding("info",content)
         
@@ -243,7 +247,7 @@ class database_checker:
                 print("continue")
                 continue
             cal_rate = round(_cal_res['succ_delta'] / (_cal_res['succ_delta']+_cal_res['fail_delta']) * 100,2)
-            if cal_rate < 98:
+            if cal_rate < 80:
                 unqualified_list = unqualified_list + "\n - {0} : {1}% ({2}/{3})".format(
                     _public_ip, cal_rate, _cal_res['succ_delta'], _cal_res['succ_delta']+_cal_res['fail_delta'])
                 list_cnt +=1
@@ -310,12 +314,65 @@ class database_checker:
             if _e_database not in n_database_l:
                 del_list.append(_e_database)
                 
-                content = "\n  INFO  \n\n  数据库被清理  \n {0} was deleted".format(
+                content = "\n  INFO  \n\n  检查到数据库被清理  \n {0} was deleted".format(
                     _e_database)
                 send_alarm_to_dingding('info', content)
+                update_sql = 'DELETE FROM db_setting where db_name = "{0}" ;'.format(_e_database)
+                myquery.query_database('empty', update_sql)
         print(del_list)
         for _del_database in del_list:
             del(self.metrics_alarm_database_dict[_del_database])
+
+    
+    def database_setting_update(self,database_list:list):
+        query_sql = "SELECT * from db_setting;"
+        query_item = myquery.query_database('empty',query_sql)
+        print(query_item)
+        db_list = [_item['db_name'] for _item in query_item]
+        print(db_list)
+        for _database in database_list:
+            _database_name = _database['name']
+            _database_time = _database['time']
+            _database_size = _database['db_size']
+            _database_ip_cnt = _database['ip_cnt']
+
+            if _database_name not in db_list:
+                insert_sql = 'INSERT INTO `db_setting`(`db_name`,`create_time`,`db_size`,`ip_cnt`) VALUES("{0}","{1}","{2}","{3}");'.format(_database_name,_database_time,_database_size,_database_ip_cnt)
+                myquery.query_database('empty',insert_sql)
+            else:
+                update_sql = 'UPDATE `db_setting` SET `db_size`="{0}",`ip_cnt`={1} WHERE db_name = "{2}";'.format(_database_size,_database_ip_cnt,_database_name)
+                myquery.query_database('empty',update_sql)
+
+
+
+    def do_clean(self,database_name:str):
+        content = "\n  INFO  \n\n  数据库被清理  \n {0} was deleted automaticly by spider".format(database_name)
+        send_alarm_to_dingding('info', content)
+
+        update_sql = 'DELETE FROM db_setting where db_name = "{0}" ;'.format(database_name)
+        delete_sql = 'DROP DATABASE {0} ;'.format(database_name)
+        myquery.query_database('empty', update_sql)
+        myquery.query_database('empty', delete_sql)
+        return
+
+    def database_clean(self,database_list:list):
+        global disk_need_clen
+        if not disk_need_clen:
+            return
+        query_sql = "SELECT * from db_setting;"
+        query_item = myquery.query_database('empty',query_sql)
+        res_item = {}
+        for _item in query_item:
+            res_item[_item['db_name']] = _item['reserve']
+        # print(res_item)
+        for _database in database_list:
+            _database_name = _database['name']
+            if res_item[_database_name] == 'false':
+                # print(_database_name)
+                # do clean
+                self.do_clean(_database_name)
+                disk_need_clen = False
+                return
 
 
     def check_metrics_alarm(self, database_list: list):
@@ -364,6 +421,47 @@ def database_time() -> list:
     res_list.sort(key=lambda k: k['time'])
     return res_list
 
+def database_detailed_info() -> list:
+    db_size_query_sql = 'SELECT TABLE_SCHEMA, round( sum( data_length / 1024 / 1024 ), 2 ) AS size FROM information_schema.TABLES GROUP BY table_schema ORDER BY size DESC;'
+    db_size_items = myquery.query_database('empty', db_size_query_sql)
+    # print(db_size_items)
+    db_size_dict = {}
+    for item in db_size_items:
+        # print(item)
+        if item['TABLE_SCHEMA'] not in database_ignore_list:
+            db_size_dict[item['TABLE_SCHEMA']] = str(item['size'])+'MB'
+    # print('-------')
+    # print(db_size_dict)
+
+    ip_size_query_sql = 'SELECT TABLE_SCHEMA, TABLE_ROWS from information_schema.TABLES WHERE TABLE_NAME = "ips_table";'
+    ip_size_item = myquery.query_database('empty', ip_size_query_sql)
+    # print(ip_size_item)
+    ip_size_dict = {}
+    for item in ip_size_item:
+        # print(item)
+        if item['TABLE_SCHEMA'] not in database_ignore_list:
+            ip_size_dict[item['TABLE_SCHEMA']] = item['TABLE_ROWS']
+    # print('-------')
+    # print(ip_size_dict)
+
+
+    query_sql = 'SELECT TABLE_SCHEMA,CREATE_TIME FROM information_schema.TABLES WHERE TABLE_NAME = "metrics_counter";'
+    query_items = myquery.query_database('empty', query_sql)
+    res_list = []
+    for item in query_items:
+        if item['TABLE_SCHEMA'] not in database_ignore_list:
+            res_list.append({
+                'time': '['+str(item['CREATE_TIME'])+']',
+                'name': item['TABLE_SCHEMA'],
+                'db_size': db_size_dict[item['TABLE_SCHEMA']],
+                'ip_cnt': ip_size_dict[item['TABLE_SCHEMA']],
+            })
+    res_list.sort(key=lambda k: k['time'])
+    return res_list
+    
+    
+
+    
 
 def run():
     db_c = database_checker()
@@ -378,8 +476,10 @@ def run():
 
         database_list = database_time()
         db_c.check_database(database_list)
-        db_c.check_metrics_alarm(database_list)
+        # db_c.check_metrics_alarm(database_list)
         db_c.check_yesterday_db(database_list)
+        db_c.database_setting_update(database_detailed_info())
+        # db_c.database_clean(database_list)
         db_c.dump_to_file()
         time.sleep(check_interval)
 

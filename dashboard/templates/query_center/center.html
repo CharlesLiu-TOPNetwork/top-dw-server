@@ -242,9 +242,9 @@
 
                 });
             });
-            $("#test_tools").click(function(){
+            $("#db_tools").click(function(){
                 htmlobj = $.ajax({
-                    url: "/query_xblockstore_hit/",
+                    url: "/db_manager/",
                     async: true,
                     beforeSend: function () {
                         $("#main_page").animate({ opacity: .4 }, 500, function () { })
@@ -272,10 +272,10 @@
         <button id="tools_0_ip_metrics" style="width:18%">ip_metrics</button>
         <!-- background-color:#9a0000; -->
         <button id="tools_0_metrics_alarm" style="width:18%;">metrics_alarm</button>
-        <button id="tools_1_xsync" style="width:14%">xsync</button>
-        <button id="tools_1_store_cache_hit" style="width:14%">store_cache_hit</button>
-        <button id="tools_1_txpool" style="width:14%">txpool</button>
-        <button id="test_tools" style="width:4%">tests</button>
+        <button id="tools_1_xsync" style="width:12%">xsync</button>
+        <button id="tools_1_store_cache_hit" style="width:12%">store_cache_hit</button>
+        <button id="tools_1_txpool" style="width:12%">txpool</button>
+        <button id="db_tools" style="width:10%">DB</button>
     </div>
 
     <div id="loading" style="width:66px;height:66px;position:absolute;top:50%;left:50%;">

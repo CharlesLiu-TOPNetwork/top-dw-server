@@ -1,0 +1,171 @@
+<style type="text/css">
+    .mainDiv {
+        width: 100%;
+    }
+
+    table {
+        border-collapse: collapse;
+        border-spacing: 0;
+    }
+
+    td,
+    th {
+        padding: 0;
+    }
+
+    .pure-table {
+        border-collapse: collapse;
+        border-spacing: 0;
+        empty-cells: show;
+        border: 1px solid #cbcbcb;
+        margin-top: 10px;
+    }
+
+    .pure-table caption {
+        color: #000;
+        font: italic 85%/1 arial, sans-serif;
+        padding: 1em 0;
+        text-align: center;
+    }
+
+    .pure-table td,
+    .pure-table th {
+        border-left: 1px solid #cbcbcb;
+        border-width: 0 0 0 1px;
+        font-size: inherit;
+        margin: 0;
+        overflow: visible;
+        padding: .5em 1em;
+    }
+
+    .pure-table thead {
+        background-color: #e0e0e0;
+        color: #000;
+        text-align: left;
+        vertical-align: bottom;
+    }
+
+    .pure-table td {
+        background-color: transparent;
+    }
+
+    .pure-table-bordered td {
+        border-bottom: 1px solid #cbcbcb;
+    }
+
+    .pure-table-bordered tbody>tr:last-child>td {
+        border-bottom-width: 0;
+    }
+</style>
+
+<script type="text/javascript">
+    $(document).on('click','.reserve',function (){
+        var db_name=$(this).parents("tr").find("td").eq(0).text(); 
+        $(this).parents("tr").find("td").eq(2).text("true");
+        $(this).parents("tr").find("td").eq(3).text("已调整");
+
+        update = $.ajax({
+            url: "/update_db_reserve/?database="+db_name+"&val=true",
+            async: true,
+            beforeSend: function () {
+                console.log("before send update_db_reserve");
+            },
+            complete: function () {
+                console.log("after  send update_db_reserve");
+            }
+        });
+    });
+    $(document).on('click','.not_reserve',function (){
+        var db_name=$(this).parents("tr").find("td").eq(0).text(); 
+        $(this).parents("tr").find("td").eq(2).text("false");
+        $(this).parents("tr").find("td").eq(3).text("已调整");
+        
+        update = $.ajax({
+            url: "/update_db_reserve/?database="+db_name+"&val=false",
+            async: true,
+            beforeSend: function () {
+                console.log("before send update_db_reserve");
+            },
+            complete: function () {
+                console.log("after  send update_db_reserve");
+            }
+        });
+    });
+    $(function () {
+        getData();
+
+        function showData(json){
+            var $table = $(".table_content");
+            {# console.log(json.length) #}
+            {# console.log(json) #}
+
+            for (var i = json.length - 1; i >= 0; i--) {
+                var html = '';
+                db_name = json[i]['db_name'];
+                create_time = json[i]['create_time'];
+                db_size = json[i]['db_size'];
+                ip_cnt = json[i]['ip_cnt'];
+                reserve = json[i]['reserve'];
+                button = ''
+                // <td><input type="button" id="uniqe_id_1" class = "reserve" value="reserve" ></td>
+                if(reserve == 'false'){
+                    button = '<input type="button" class = "reserve" value="保留数据库" >'
+                } else {   
+                    button = '<input type="button" class = "not_reserve" value="不保留数据库" >'
+                }
+                html += '<tr>';
+                html += '<td>' + db_name + '</td>';
+                html += '<td>' + create_time + '</td>';
+                html += '<td>' + db_size + '</td>';
+                html += '<td>' + ip_cnt + '</td>';
+                html += '<td>' + reserve + '</td>';
+                html += '<td>' + button + '</td>';
+                html += '</tr>';
+
+                $table.append(html);
+            }
+        }
+
+        function getData() {
+            resp = $.ajax({
+                url: "/query_db_manager_info",
+                async: true,
+                beforeSend: function () {
+                    console.log("before send query_db_manager_info");
+                },
+                complete: function () {
+                    console.log("after  send query_db_manager_info");
+                    showData(JSON.parse(resp.responseText))
+                }
+            });
+        }
+    })
+</script>
+<table class="pure-table pure-table-bordered">
+    <thead>
+        <tr>
+            <th>database</th>
+            <th>创建时间</th>
+            <th>数据库大小</th>
+            <th>节点个数</th>
+            <th>是否保留</th>
+            <th>操作</th>
+        </tr>
+    </thead>
+
+    <tbody class="table_content">
+        {# <tr>
+            <td>1</td>
+            <td>Honda</td>
+            <td>false</td>
+            <td><input type="button" class = "reserve" value="reserve" /></td>
+        </tr> 
+        <tr>
+            <td>1</td>
+            <td>Honda</td>
+            <td>true</td>
+            <td><button class = "not_reserve">not_reserve</button></td>
+        </tr>  #}
+    </tbody>
+</table>
+
