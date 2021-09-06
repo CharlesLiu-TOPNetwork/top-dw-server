@@ -422,14 +422,14 @@ def database_time() -> list:
     return res_list
 
 def database_detailed_info() -> list:
-    db_size_query_sql = 'SELECT TABLE_SCHEMA, round( sum( data_length / 1024 / 1024 ), 2 ) AS size FROM information_schema.TABLES GROUP BY table_schema ORDER BY size DESC;'
+    db_size_query_sql = 'SELECT TABLE_SCHEMA, round( sum( DATA_LENGTH / 1024 / 1024 ), 2 ) AS data_size, round( sum( INDEX_LENGTH / 1024 / 1024 ),2 ) AS index_size FROM information_schema.TABLES GROUP BY table_schema ORDER BY data_size DESC;'
     db_size_items = myquery.query_database('empty', db_size_query_sql)
     # print(db_size_items)
     db_size_dict = {}
     for item in db_size_items:
         # print(item)
         if item['TABLE_SCHEMA'] not in database_ignore_list:
-            db_size_dict[item['TABLE_SCHEMA']] = str(item['size'])+'MB'
+            db_size_dict[item['TABLE_SCHEMA']] = str(item['data_size'])+'MB + ' + str(item['index_size']) + 'MB = ' + str(round((item['data_size']+item['index_size'])/1024, 2)) + 'GB'
     # print('-------')
     # print(db_size_dict)
 
