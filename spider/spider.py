@@ -259,6 +259,7 @@ class database_checker:
         # print(report_list)
         return report_list
 
+    #[unused]
     def do_check_consensus_succ_rate(self,db_name:str) -> list:
         gmt_time = int(time.time()/300)*300
         begin_gmt_time = gmt_time-25*3600
@@ -363,27 +364,23 @@ class database_checker:
 
     def do_sumarize_report(self,db_name:str):
         content_list = []
-        for _r in self.do_check_consensus_succ_rate(db_name):
+        for _r in self.do_check_consensus_succ_rate2(db_name):
             content_list.append(_r)
         return content_list
 
     def check_yesterday_db(self,database_list:list):
-        tz = datetime.timezone(datetime.timedelta(hours=0))
-        date_now = datetime.datetime.now(tz)
-        last_date_day = date_now.date()-datetime.timedelta(days=1)
-        str_date = str(last_date_day).replace('-', '')
-        t_hour = date_now.hour
-        if(t_hour == 1):
-            # check at every day 1:00UTC (+8:00 = 9:00am)
-            for _database in database_list:
-                _database_name = _database['name']
-                if(_database_name.endswith(str_date) and not self.metrics_alarm_database_dict[_database_name]["done_report"]):
-                    content_list = self.do_sumarize_report(_database_name)
-                    for each_content in content_list:
-                        send_alarm_to_dingding('info', each_content)
-                        time.sleep(1)
-                    self.metrics_alarm_database_dict[_database_name]["done_report"] = 1
-
+        yesterday_date = yesterday_date_str()
+        # check at every day 1:00UTC (+8:00 = 9:00am) the yesterday database
+        for _database in database_list:
+            _database_name = _database['name']
+            if(_database_name.endswith(yesterday_date) and not self.metrics_alarm_database_dict[_database_name]["done_report"] ):
+                content_list = self.do_sumarize_report(_database_name)
+                for each_content in content_list:
+                    send_alarm_to_dingding('info', each_content)
+                    # if is_mainnet_db(_database_name):
+                    #     send_alarm_to_dingding_common('info', each_content)
+                    time.sleep(1)
+                self.metrics_alarm_database_dict[_database_name]["done_report"] = 1
         return
 
 
@@ -416,7 +413,7 @@ class database_checker:
         for _del_database in del_list:
             del(self.metrics_alarm_database_dict[_del_database])
 
-    
+
     def database_setting_update(self,database_list:list):
         query_sql = "SELECT * from db_setting;"
         query_item = myquery.query_database('empty',query_sql)
