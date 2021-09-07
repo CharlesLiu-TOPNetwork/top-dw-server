@@ -174,6 +174,7 @@ class database_checker:
         print(str)
         self.metrics_alarm_database_dict = json.loads(str)
         self.consensus_succ_rate_hold = 80
+        self.alarm_check_interval = 5
     
     def get_ip_size(self,db_name:str):
         query_sql = 'SELECT count(public_ips) as res from ips_table;'
@@ -464,8 +465,58 @@ class database_checker:
                 disk_need_clen = False
                 return
 
+    def get_detailed_metrics_alarm_info(self, db_name, old_size, size) -> list:
+        query_sql = 'SELECT send_timestamp,public_ip,category,tag from `metrics_alarm` where seq_id > {0} and seq_id <= {1}'.format(old_size, size)
+        query_items = myquery.query_database(db_name, query_sql)
+        if not query_items:
+            return []
+
+        category_tag_cnt = {}
+        public_ip_cnt = {}
+        max_ts = 0
+        min_ts = int(time.time())
+        for _each in query_items:
+            public_ip = _each['public_ip']
+            category = _each['category']
+            tag = _each['tag']
+            st = _each['send_timestamp']
+            if st > max_ts: max_ts = st
+            if st < min_ts: min_ts = st
+            if public_ip not in public_ip_cnt:
+                public_ip_cnt[public_ip] = 1
+            else:
+                public_ip_cnt[public_ip] += 1
+            if category+tag not in category_tag_cnt:
+                category_tag_cnt[category+tag] = 1
+            else:
+                category_tag_cnt[category+tag] += 1
+
+        report_data = '## 【METRICS_ALARM】 新增{0}条 \n > 来自数据库： {1} \n seq_id: {2} - {3} \n'.format(size-old_size, db_name, old_size,size)
+
+        time_report = '\n ### 时间范围: \n \n > {0} - {1}'.format(time.strftime(format_regex, time.localtime(min_ts)),time.strftime(format_regex, time.localtime(max_ts)))
+
+        report_data = report_data + time_report + ' \n \n '
+
+        category_report = '\n ### 分类占比: \n'
+        for ct, num in category_tag_cnt.items():
+            category_report = category_report + \
+                ' \n -  {0} 个 {1} '.format(str(num), str(ct))
+        report_data = report_data + category_report + ' \n \n '
+
+        ip_report = '\n ### 来源ip占比: \n'
+        for ip, num in public_ip_cnt.items():
+            ip_report = ip_report + ' \n - {0} 个来自 {1} '.format(str(num), str(ip))
+        report_data = report_data + ip_report + ' \n \n '
+
+        return [report_data]
 
     def check_metrics_alarm(self, database_list: list):
+        if self.alarm_check_interval < 5:
+            self.alarm_check_interval += 1
+            return
+        else:
+            self.alarm_check_interval = 0
+
         for _database in database_list:
             _database_name = _database['name']
             query_sql = 'SELECT table_rows from information_schema.tables where table_schema = "{0}" and table_name = "metrics_alarm";'.format(_database_name)
@@ -477,9 +528,11 @@ class database_checker:
             old_size = self.metrics_alarm_database_dict[_database_name]["alarm_size"]
 
             if size > old_size:
-                content = "\n  ALARM  \n\n  新增 {0} 条 metrics_alarm \n database:[{1}]".format(
-                    size-old_size, _database_name)
-                send_alarm_to_dingding('alarm', content)
+                content_list = self.get_detailed_metrics_alarm_info(_database_name,old_size,size)
+                for each_content in content_list:
+                    send_alarm_to_dingding('info',each_content)
+                    # if is_mainnet_db(_database_name):
+                    #     send_alarm_to_dingding_common('info',each_content)
             else:
                 print("no more alarm in {0}".format(_database_name))
 
@@ -567,7 +620,8 @@ def run():
         database_list = database_time()
         db_c.check_database(database_list)
         # db_c.check_metrics_alarm(database_list)
-        db_c.check_yesterday_db(database_list)
+        if now_time_utc_hour() == 1:
+            db_c.check_yesterday_db(database_list)
         db_c.database_setting_update(database_detailed_info())
         # db_c.database_clean(database_list)
         db_c.dump_to_file()
