@@ -77,14 +77,27 @@ alarm_template = {
 def now_time():
     return time.strftime(format_regex, time.localtime(time.time()))
 
+def now_time_utc_hour() -> int:
+    tz = datetime.timezone(datetime.timedelta(hours=0))
+    date_now = datetime.datetime.now(tz)
+    t_hour = date_now.hour
+    return t_hour
+
+def yesterday_date_str() -> str:
+    tz = datetime.timezone(datetime.timedelta(hours=0))
+    date_now = datetime.datetime.now(tz)
+    last_date_day = date_now.date()-datetime.timedelta(days=1)
+    str_date = str(last_date_day).replace('-', '')
+    # str like '20210818'
+    return str_date
+
 def send_alarm_to_dingding(type: str, content):
     webhook = config.WEBHOOK
     header = {"Content-Type": "application/json"}
 
     template = alarm_template[type]
     print(template)
-    template["markdown"]["text"] = "#### http://{0}/center \n{1}".format(
-        my_ip, content)
+    template["markdown"]["text"] = "{0} \n > [测试环境metrics监控地址](http://{1}/center) \n".format(content, my_ip)
 
     send_data = json.dumps(template)
     print(send_data)
@@ -160,11 +173,91 @@ class database_checker:
         f.close()
         print(str)
         self.metrics_alarm_database_dict = json.loads(str)
+        self.consensus_succ_rate_hold = 80
     
     def get_ip_size(self,db_name:str):
         query_sql = 'SELECT count(public_ips) as res from ips_table;'
         res = myquery.query_database(db_name,query_sql)[0]['res']
         return res
+
+    def sum_consensus_result_into_map(self,res_item,res_map,perfix_str:str):
+        for item in res_item:
+            public_ip = item['public_ip']
+            value = item['value']
+            if public_ip not in res_map:
+                res_map[public_ip] = {
+                }
+            if perfix_str+'begin' not in res_map[public_ip]:
+                res_map[public_ip][perfix_str+'sum'] = 0
+                res_map[public_ip][perfix_str+'begin'] = value
+                res_map[public_ip][perfix_str+'end'] = value
+            if value < res_map[public_ip][perfix_str+'end']:
+                # print("in:",public_ip,res_map[public_ip][perfix_str+'begin'],res_map[public_ip][perfix_str+'end'],res_map[public_ip][perfix_str+'sum'])
+                res_map[public_ip][perfix_str+'sum'] += (res_map[public_ip][perfix_str+'end']-res_map[public_ip][perfix_str+'begin'])
+                # print("in:",public_ip,res_map[public_ip][perfix_str+'begin'],res_map[public_ip][perfix_str+'end'],res_map[public_ip][perfix_str+'sum'])
+                res_map[public_ip][perfix_str+'begin'] = value
+                res_map[public_ip][perfix_str+'end'] = value
+            else:
+                res_map[public_ip][perfix_str+'end'] = value
+        
+        for _ip,_res in res_map.items():
+            # print(_ip,_res[perfix_str+'begin'],_res[perfix_str+'end'],_res[perfix_str+'sum'])
+            _res[perfix_str+'sum'] += (_res[perfix_str+'end'] - _res[perfix_str+'begin'])
+            # print(_ip,_res[perfix_str+'begin'],_res[perfix_str+'end'],_res[perfix_str+'sum'])
+        return
+
+    def do_check_consensus_succ_rate2(self,db_name:str) ->list:
+        res_map = {}
+        query_succ_sql = 'SELECT public_ip,value from metrics_counter where category = "cons" and tag = "tableblock_leader_finish_succ" order by public_ip,send_timestamp;'
+        succ_res_item = myquery.query_database(db_name,query_succ_sql)
+        self.sum_consensus_result_into_map(succ_res_item,res_map,"succ")
+
+        query_fail_sql = 'SELECT public_ip,value from metrics_counter where category = "cons" and tag = "tableblock_leader_finish_fail" order by public_ip,send_timestamp;'
+        fail_res_item = myquery.query_database(db_name,query_fail_sql)
+        self.sum_consensus_result_into_map(fail_res_item,res_map,"fail")
+
+        # ip_list = []
+        missing_ip = []
+        unqualified_list = []
+        query_ip_sql = 'SELECT public_ips from ips_table;'
+        ip_item = myquery.query_database(db_name,query_ip_sql)
+        for _each in ip_item:
+            _ip = _each['public_ips']
+            if _ip not in res_map.keys():
+                missing_ip.append(_ip)
+                continue
+            if 'succsum' not in res_map[_ip].keys() or 'failsum' not in res_map[_ip].keys():
+                missing_ip.append(_ip)
+                continue
+            succ_num = res_map[_ip]['succsum']
+            fail_num = res_map[_ip]['failsum']
+            if fail_num !=0 :
+                cal_rate = round(succ_num / (succ_num + fail_num) * 100,2)
+                # print(_ip,cal_rate)
+                if cal_rate< self.consensus_succ_rate_hold:
+                    unqualified_list.append((_ip,cal_rate,succ_num,succ_num+fail_num))
+        
+        report_data = '## 【共识成功率检测结果】\n 日期：{0} \n 来自数据库： {1} \n '.format(yesterday_date_str(),db_name)
+        
+        if len(missing_ip):
+            missing_report = '### 缺少节点数据：\n '
+            for _ip in missing_ip:
+                missing_report = missing_report + "\n - " + _ip
+            report_data = report_data + missing_report+ '\n\n'
+
+        qualified_report = '### 成功率高于{0}%节点个数： \n **【{1}/{2}】** \n'.format(self.consensus_succ_rate_hold, len(ip_item)-len(missing_ip)-len(unqualified_list), len(ip_item))
+        report_data = report_data + qualified_report
+
+        if len(unqualified_list):
+            unqualified_list.sort(key=lambda k: k[1]) # sort by rate
+            unqualified_report = '### 成功率低于{0}%：【{1}】 个 \n [format: ip: rate (succ/all) ] '.format(self.consensus_succ_rate_hold, len(unqualified_list))
+            for _d in unqualified_list:
+                unqualified_report = unqualified_report + ' \n - {0}: {1}% ({2} / {3})'.format(_d[0],_d[1],_d[2],_d[3])
+            report_data = report_data + unqualified_report
+
+        report_list = [report_data]
+        # print(report_list)
+        return report_list
 
     def do_check_consensus_succ_rate(self,db_name:str) -> list:
         gmt_time = int(time.time()/300)*300
