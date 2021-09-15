@@ -97,7 +97,8 @@ def send_alarm_to_dingding(type: str, content):
 
     template = alarm_template[type]
     print(template)
-    template["markdown"]["text"] = "{0} \n > [测试环境metrics监控地址](http://{1}/center) \n".format(content, my_ip)
+    address_name = config.ADDRESS_USAGE
+    template["markdown"]["text"] = "{0} \n > [{1}](http://{2}/center) \n".format(content, address_name, my_ip)
 
     send_data = json.dumps(template)
     print(send_data)
@@ -609,6 +610,7 @@ def database_detailed_info() -> list:
 def run():
     db_c = database_checker()
     process_c = process_checker()
+    send_alarm_to_dingding('info','spider_start')
     while True:
         
         process_c.check_true_or_restart('consumer/','main_consumer.py',consumer_process_count,'nohup python3 main_consumer.py -t test & \n')
