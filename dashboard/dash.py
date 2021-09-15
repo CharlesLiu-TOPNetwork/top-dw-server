@@ -30,6 +30,7 @@ from dashboard import dash_user
 from dashboard import query_core
 # from common.my_queue import TopArgusRedis
 # import common.config as sconfig
+import common.config as config
 
 app = Flask(__name__)
 auth = HTTPBasicAuth()
@@ -974,7 +975,7 @@ def metrics_alarm():
 @app.route('/center',methods=['GET'])
 @app.route('/center/',methods=['GET'])
 def center_page():
-    return render_template('query_center/center.html')
+    return render_template('query_center/center.html.j2',title = config.ADDRESS_USAGE)
 
 
 # ![api] query_alarm_page: used by metrics_alarm.html. query button return a table div.
