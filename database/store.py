@@ -357,7 +357,6 @@ class Store(str):
         safe_keys = ['`%s`' % k for k in keys]
         sql = 'INSERT INTO `%s`(%s) VALUES (%s)' % (table , ','.join(safe_keys),'%s' + ',%s' * (size - 1))
         val = tuple(tuple(v for _,v in each.items()) for each in item)
-        # print(sql,val)
         last_id = self.cursor.executemany(sql, val)
         return last_id
 
@@ -372,7 +371,6 @@ class Store(str):
         safe_keys = ['`%s`' % k for k in keys]
         sql = 'INSERT INTO `%s`(%s) VALUES(%s)' % (
             table, ','.join(safe_keys), '%s' + ',%s' * (size - 1))
-        print(sql)
         last_id = self.cursor.execute(sql, [item[key] for key in keys])
         return last_id
     

@@ -16,7 +16,7 @@ class MetricsCounterConsumer(object):
             os.getpid(), os.getppid(), json.dumps(queue_key_list)))
 
         self.alarm_env_ = alarm_env
-        self.consume_step_ = 3
+        self.consume_step_ = 30
 
         # store packet_info from /api/alarm
         self.alarm_queue_ = q
@@ -86,7 +86,7 @@ class MetricsCounterConsumer(object):
         return
 
     def metrics_counter_handle(self, packet):
-        slog.info(packet)
+        # slog.info(packet)
         '''
         {
             'alarm_type': 'metrics_counter', 

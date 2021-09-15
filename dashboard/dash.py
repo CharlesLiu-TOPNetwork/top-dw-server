@@ -160,10 +160,10 @@ def raw_query_txpool():
         return "env not exist"
 
     sql = ''
-    sql_template = 'SELECT * FROM (( SELECT * FROM txpool_'+ type +' {0} ORDER BY send_timestamp DESC ) AS tmp ) GROUP BY public_ip;'
+    # sql_template = 'SELECT * FROM (( SELECT * FROM txpool_'+ type +' {0} ORDER BY send_timestamp DESC ) AS tmp ) GROUP BY public_ip;'
 
     if ip == 'all' :
-        sql = sql_template.format('')
+        sql = 'SELECT * FROM (( SELECT * FROM txpool_'+ type +' {0} ORDER BY send_timestamp DESC ) AS tmp ) GROUP BY public_ip;'.format('')
     else:
         # check ip exist
         query_ip_sql = 'SELECT public_ips FROM ips_table;'
@@ -173,7 +173,7 @@ def raw_query_txpool():
             ip_list.append(item['public_ips'])
         if ip not in ip_list:
             return "ip {0} not exist in {1}".format(ip, env)
-        sql = sql_template.format('WHERE public_ip = "'+ ip +'"')
+        sql = 'SELECT * FROM txpool_'+ type +' {0} ORDER BY send_timestamp DESC;'.format('WHERE public_ip = "'+ ip +'"')
     
     # print(sql)
     
