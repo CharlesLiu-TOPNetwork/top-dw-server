@@ -16,7 +16,7 @@ class P2pBroadcastConsumer(object):
             os.getpid(), os.getppid(), json.dumps(queue_key_list)))
 
         self.alarm_env_ = alarm_env
-        self.consume_step_ = 3
+        self.consume_step_ = 30
 
         # store packet_info from /api/alarm
         self.alarm_queue_ = q
@@ -45,6 +45,10 @@ class P2pBroadcastConsumer(object):
             'public_ip': '',
             'recv_packet_size': 0,
             'hop_num': 0,
+        }
+        self.cache_num = 100
+        self.raw_msg_info_cache = {
+
         }
 
         return
@@ -193,7 +197,15 @@ class P2pBroadcastConsumer(object):
             'is_root': packet.get('is_root'),
             'is_broadcast': packet.get('is_broadcast'),
         }
-        self.mysql_db.insert_into_db(db, 'p2p_raw_msg_info', raw_msg_info)
+
+        if db not in self.raw_msg_info_cache:
+            self.raw_msg_info_cache[db] = []
+        self.raw_msg_info_cache[db].append(raw_msg_info)
+        if len(self.raw_msg_info_cache[db]) > self.cache_num:
+            self.mysql_db.multi_insert_into_db(db,"p2p_raw_msg_info",self.raw_msg_info_cache[db])
+            self.raw_msg_info_cache[db] = []
+        # self.mysql_db.insert_into_db(db, 'p2p_raw_msg_info', raw_msg_info)
+
         if int(time.time()) - self.last_dump_checktime > 10:
             self.try_dump_cache_to_db()
             self.last_dump_checktime = int(time.time())
