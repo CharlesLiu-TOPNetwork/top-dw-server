@@ -573,7 +573,7 @@ def query_flow(database, category, tag):
 
 # ![function] used by other apis, return an [category - tag - type:timer]'s all nodes' metrics data (one full picture)
 def query_timer(database, category, tag):
-    query_sql = 'SELECT public_ip,send_timestamp,count,max_time,min_time,avg_time FROM metrics_timer WHERE category = "' + \
+    query_sql = 'SELECT public_ip,send_timestamp,count,max_time,min_time,avg_time,(count * avg_time) as sum_time FROM metrics_timer WHERE category = "' + \
         category + '" AND tag = "' + tag + '" ORDER BY public_ip,send_timestamp;'
     query_items = myquery.query_database(database, query_sql)
 
@@ -584,6 +584,7 @@ def query_timer(database, category, tag):
         'max_time': {},
         'min_time': {},
         'avg_time': {},
+        'sum_time': {},
     }
     for item in query_items:
         ip = item['public_ip']
@@ -601,6 +602,7 @@ def query_timer(database, category, tag):
         res_item[ip][ts]['max_time'] = item['max_time']
         res_item[ip][ts]['min_time'] = item['min_time']
         res_item[ip][ts]['avg_time'] = item['avg_time']
+        res_item[ip][ts]['sum_time'] = item['sum_time']
 
     x_list.sort()
 
@@ -676,7 +678,7 @@ def query_ip_category_metrics():
 
     res = res + render_template('joint/body_div_line.html', name = "metrics_timer")
     # metrics_timer:
-    query_sql = 'SELECT tag,send_timestamp,count,max_time,min_time,avg_time FROM metrics_timer WHERE public_ip = "{0}" AND category = "{1}" ORDER BY tag,send_timestamp;'.format(ip, category)
+    query_sql = 'SELECT tag,send_timestamp,count,max_time,min_time,avg_time,(count * avg_time) as sum_time FROM metrics_timer WHERE public_ip = "{0}" AND category = "{1}" ORDER BY tag,send_timestamp;'.format(ip, category)
     query_items = myquery.query_database(database,query_sql)
     res_item = {}
     for item in query_items:
@@ -689,6 +691,7 @@ def query_ip_category_metrics():
                     'max_time':[],
                     'min_time':[],
                     'avg_time':[],
+                    'sum_time':[],
                 },
             }
         ts = item['send_timestamp']
@@ -697,6 +700,7 @@ def query_ip_category_metrics():
         res_item[tag]['value_series']['max_time'].append(item['max_time'])
         res_item[tag]['value_series']['min_time'].append(item['min_time'])
         res_item[tag]['value_series']['avg_time'].append(item['avg_time'])
+        res_item[tag]['value_series']['sum_time'].append(item['sum_time'])
 
     for _tag,_value in res_item.items():
         res = res + render_template('joint/body_small_line_chart_for_one_metrics_tag_one_ip.html.j2', name=_tag,
