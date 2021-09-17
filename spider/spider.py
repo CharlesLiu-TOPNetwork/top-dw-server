@@ -91,6 +91,27 @@ def yesterday_date_str() -> str:
     # str like '20210818'
     return str_date
 
+def is_mainnet_db(db_name:str):
+    return db_name.startswith('mainnet_')
+
+def send_alarm_to_dingding_common(type:str,content):
+    webhook = config.WEBHOOK_PUB
+    header = {"Content-Type": "application/json"}
+
+    template = alarm_template[type]
+    print(template)
+    template["markdown"]["text"] = "{0} \n > [主网metrics监控地址](http://{1}/center) \n".format(content, my_ip)
+
+    send_data = json.dumps(template)
+    print(send_data)
+
+    try:
+        r = requests.post(webhook, headers=header,
+                          data=send_data, timeout=10)
+        print(r.text)
+    except Exception as e:
+        print('catch exception:{0}'.format(e))
+
 def send_alarm_to_dingding(type: str, content):
     webhook_PRI = config.WEBHOOK_PRI
     webhook_PUB = config.WEBHOOK_PUB
@@ -389,8 +410,8 @@ class database_checker:
                 content_list = self.do_sumarize_report(_database_name)
                 for each_content in content_list:
                     send_alarm_to_dingding('info', each_content)
-                    # if is_mainnet_db(_database_name):
-                    #     send_alarm_to_dingding_common('info', each_content)
+                    if is_mainnet_db(_database_name):
+                        send_alarm_to_dingding_common('info', each_content)
                     time.sleep(1)
                 self.metrics_alarm_database_dict[_database_name]["done_report"] = 1
         return
@@ -547,8 +568,8 @@ class database_checker:
                 content_list = self.get_detailed_metrics_alarm_info(_database_name,old_size,size)
                 for each_content in content_list:
                     send_alarm_to_dingding('info',each_content)
-                    # if is_mainnet_db(_database_name):
-                    #     send_alarm_to_dingding_common('info',each_content)
+                    if is_mainnet_db(_database_name):
+                        send_alarm_to_dingding_common('info',each_content)
             else:
                 print("no more alarm in {0}".format(_database_name))
 
@@ -639,7 +660,7 @@ def run():
     process_c = process_checker()
     send_alarm_to_dingding('alarm','spider_start')
     while True:
-        
+
         process_c.check_true_or_restart('consumer/','main_consumer.py',consumer_process_count,'nohup python3 main_consumer.py -t test & \n')
         process_c.check_true_or_restart('proxy/','gunicorn',proxy_gunicorn_process_count,'nohup gunicorn -w 4 -b 127.0.0.1:9092 proxy:app & \n')
         process_c.check_true_or_restart('dashboard/','dash.py',dash_process_count,'nohup python3 dash.py & \n')
@@ -648,11 +669,11 @@ def run():
 
         database_list = database_time()
         db_c.check_database(database_list)
-        # db_c.check_metrics_alarm(database_list)
+        db_c.check_metrics_alarm(database_list)
         if now_time_utc_hour() == 1:
             db_c.check_yesterday_db(database_list)
         db_c.database_setting_update(database_detailed_info())
-        db_c.database_clean(database_list)
+        # db_c.database_clean(database_list)
         db_c.dump_to_file()
         time.sleep(check_interval)
 

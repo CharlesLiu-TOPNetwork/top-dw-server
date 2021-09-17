@@ -17,7 +17,15 @@
                 $("#Result_DIV").html('please choose database && category && tag && type!');
                 return
             }
-            query_path = "/query_category_tag_metrics/?database=" + database +  "&category=" + category + "&tag=" + tag + "&type=" + type
+            var ip_str = ''
+            $(".span_ip").each(function(i,n){
+                ip_str = ip_str +('\'' + $(n).text() + '\',')
+            });
+            console.log(ip_str)
+            if(ip_str.length==0){return}
+            ip_str = ip_str.substr(0,ip_str.length-1)
+
+            query_path = "/query_category_tag_metrics/?database=" + database +  "&category=" + category + "&tag=" + tag + "&type=" + type + "&ip_str=" + ip_str
             console.log(query_path)
             htmlobj = $.ajax({
                 url: query_path,
@@ -90,10 +98,30 @@
                             $(".tag_selector").html(tag_htmlobj.responseText)
                         },
                     });
+
+                    query_path3 = "/query_ips/?database=" + database
+                    console.log(query_path3)
+                    ip_htmlobj = $.ajax({
+                        url:query_path3,
+                        async:true,
+                        complete:function(){
+                            $(".ip_selector").html(ip_htmlobj.responseText)
+                            $(".multi_ip_selector").html('')
+                        },
+                    });
                     
                 },
             });
         });
+
+        // set ip into selector
+        $(".ip_selector").change(function() {
+            ip = $(".ip_selector").val();
+            {# console.log(ip);
+            console.log(already_has_ip); #}
+            $(".multi_ip_selector").append("<span class = 'span_ip' id = '"+ip+"' onclick = \"document.getElementById('"+ip+"').parentNode.removeChild(document.getElementById('"+ip+"'));\">"+ip+"</span>")
+        });
+
         // get tag when set category
         $(".category_selector").change( function(){
             database = $(".database_selector").val();
@@ -115,7 +143,6 @@
         });
     })
 </script>
-
 <div class = "function_selectors">
     <select class="database_selector">
         <option>choose database</option>
@@ -141,5 +168,24 @@
     <button id="b01" class="query_button" type="button">query_metrics</button>
     
 </div>
+<select class="ip_selector">
+</select>
+<style>
+.span_ip{
+    margin-left:5px;
+    margin-right:5px;
+}
+</style>
 
+<div>
+
+点击ip删除
+<ul>
+<li class = "multi_ip_selector">
+
+{# <span class = "span_ip" id = "test_id2" onclick = "document.getElementById('test_id2').parentNode.removeChild(document.getElementById('test_id2'));">test_ip2</span> #}
+
+</li>
+</ul>
+</div>
 <div id="Result_DIV"></div>
