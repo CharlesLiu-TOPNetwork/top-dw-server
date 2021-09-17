@@ -476,9 +476,9 @@ def query_array_counter(database,category,tag):
 
 
 # ![function] used by other apis, return an [category - tag - type:counter]'s all nodes' metrics data (one full picture)
-def query_counter(database, category, tag):
+def query_counter(database, category, tag, ip_str):
     query_sql = 'SELECT public_ip,send_timestamp,count,value FROM metrics_counter WHERE category = "' + \
-        category + '" AND tag = "' + tag + '" ORDER BY public_ip,send_timestamp;'
+        category + '" AND tag = "' + tag + '" AND public_ip in (' + ip_str + ') ORDER BY public_ip,send_timestamp;'
     query_items = myquery.query_database(database, query_sql)
 
     res_item = {}
@@ -531,9 +531,9 @@ def query_counter(database, category, tag):
     return res
 
 # ![function] used by other apis, return an [category - tag - type:flow]'s all nodes' metrics data (one full picture)
-def query_flow(database, category, tag):
+def query_flow(database, category, tag, ip_str):
     query_sql = 'SELECT public_ip,send_timestamp,count,max_flow,min_flow,sum_flow,avg_flow,tps_flow,tps FROM metrics_flow WHERE category = "' + \
-        category + '" AND tag = "' + tag + '" ORDER BY public_ip,send_timestamp;'
+        category + '" AND tag = "' + tag + '" AND public_ip in (' + ip_str + ') ORDER BY public_ip,send_timestamp;'
     query_items = myquery.query_database(database, query_sql)
 
     res_item = {}
@@ -590,7 +590,8 @@ def query_flow(database, category, tag):
 # ![function] used by other apis, return an [category - tag - type:timer]'s all nodes' metrics data (one full picture)
 def query_timer(database, category, tag):
     query_sql = 'SELECT public_ip,send_timestamp,count,max_time,min_time,avg_time,(count * avg_time) as sum_time FROM metrics_timer WHERE category = "' + \
-        category + '" AND tag = "' + tag + '" ORDER BY public_ip,send_timestamp;'
+        category + '" AND tag = "' + tag + '" AND public_ip in (' + ip_str + ') ORDER BY public_ip,send_timestamp;'
+
     query_items = myquery.query_database(database, query_sql)
 
     res_item = {}
@@ -648,15 +649,17 @@ def query_category_tag_metrics():
     type = request.args.get('type') or None
     category = request.args.get('category') or None
     tag = request.args.get('tag') or None
+    ip_str = request.args.get('ip_str') or None
+    print(ip_str)
 
     if type == 'counter':
-        return query_counter(database, category, tag)
+        return query_counter(database, category, tag, ip_str)
     elif type == 'flow':
-        return query_flow(database, category, tag)
+        return query_flow(database, category, tag, ip_str)
     elif type == 'timer':
-        return query_timer(database, category, tag)
+        return query_timer(database, category, tag, ip_str)
     elif type == 'array_counter':
-        return query_array_counter(database, category, tag)
+        return query_array_counter(database, category, tag, ip_str)
     else:
         return "query_category_tag_metrics"  
 
