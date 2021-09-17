@@ -92,7 +92,8 @@ def yesterday_date_str() -> str:
     return str_date
 
 def send_alarm_to_dingding(type: str, content):
-    webhook = config.WEBHOOK
+    webhook_PRI = config.WEBHOOK_PRI
+    webhook_PUB = config.WEBHOOK_PUB
     header = {"Content-Type": "application/json"}
 
     template = alarm_template[type]
@@ -104,11 +105,20 @@ def send_alarm_to_dingding(type: str, content):
     print(send_data)
 
     try:
-        r = requests.post(webhook, headers=header,
+        r = requests.post(webhook_PRI, headers=header,
                           data=send_data, timeout=10)
         print(r.text)
     except Exception as e:
         print('catch exception:{0}'.format(e))
+    
+    if type == 'info':    
+        try:
+            r = requests.post(webhook_PUB, headers=header,
+                            data=send_data, timeout=10)
+            print(r.text)
+        except Exception as e:
+            print('catch exception:{0}'.format(e))
+        
 
 
 class process_checker:
@@ -397,8 +407,7 @@ class database_checker:
                     "alarm_size": 0,
                     "done_report": 0,
                 }
-                content = "\n  INFO  \n\n  新数据库创建  \n {0} was created at time {1}".format(
-                    _database_name, _database_time)
+                content = "\n  新数据库创建  \n {0} was created at time {1}".format(_database_name, _database_time)
                 send_alarm_to_dingding('info', content)
         n_database_l = [_d['name'] for _d in database_list]
         del_list = []
@@ -406,9 +415,8 @@ class database_checker:
             if _e_database not in n_database_l:
                 del_list.append(_e_database)
                 
-                content = "\n  INFO  \n\n  检查到数据库被清理  \n {0} was deleted".format(
-                    _e_database)
-                send_alarm_to_dingding('info', content)
+                content = "\n  检测到数据库被人为清理  \n {0} was deleted".format(_e_database)
+                send_alarm_to_dingding('alarm', content)
                 update_sql = 'DELETE FROM db_setting where db_name = "{0}" ;'.format(_e_database)
                 myquery.query_database('empty', update_sql)
         print(del_list)
@@ -438,7 +446,7 @@ class database_checker:
 
 
     def do_clean(self,database_name:str):
-        content = "\n  INFO  \n\n  数据库被清理  \n {0} was deleted automaticly by spider".format(database_name)
+        content = "\n  数据库被清理  \n  因磁盘空间有限，该数据库将被自动删除 \n {0} \n".format(database_name)
         send_alarm_to_dingding('info', content)
 
         update_sql = 'DELETE FROM db_setting where db_name = "{0}" ;'.format(database_name)
@@ -612,7 +620,7 @@ def database_detailed_info() -> list:
 def run():
     db_c = database_checker()
     process_c = process_checker()
-    send_alarm_to_dingding('info','spider_start')
+    send_alarm_to_dingding('alarm','spider_start')
     while True:
         
         process_c.check_true_or_restart('consumer/','main_consumer.py',consumer_process_count,'nohup python3 main_consumer.py -t test & \n')
