@@ -156,7 +156,7 @@ class process_checker:
     def check_disk_free(self,disk_name):
         global disk_need_clen
         res = int(subprocess.getoutput('df -mh | grep %s |awk -F \' \' \'{print $5}\' ' % disk_name ).strip('%'))
-        if res > 85:
+        if res > 88:
             disk_need_clen = True
         if res > 90 and res != self.disk_usage_rate:
             content = "\n[info] disk space less than 10%! Already use " + \
@@ -442,7 +442,9 @@ class database_checker:
         send_alarm_to_dingding('info', content)
 
         update_sql = 'DELETE FROM db_setting where db_name = "{0}" ;'.format(database_name)
-        delete_sql = 'DROP DATABASE {0} ;'.format(database_name)
+        delete_sql = 'DROP DATABASE `{0}` ;'.format(database_name)
+        
+        del(self.metrics_alarm_database_dict[database_name])
         myquery.query_database('empty', update_sql)
         myquery.query_database('empty', delete_sql)
         return
@@ -625,7 +627,7 @@ def run():
         if now_time_utc_hour() == 1:
             db_c.check_yesterday_db(database_list)
         db_c.database_setting_update(database_detailed_info())
-        # db_c.database_clean(database_list)
+        db_c.database_clean(database_list)
         db_c.dump_to_file()
         time.sleep(check_interval)
 
