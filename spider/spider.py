@@ -435,12 +435,17 @@ class database_checker:
             _database_time = _database['time']
             _database_size = _database['db_size']
             _database_ip_cnt = _database['ip_cnt']
+            _database_online_status = ''
+            if 'online_size' in _database:
+                _database_online_status = str(_database['online_size'])+'个节点运行中'
+            else:
+                _database_online_status = '未统计'
 
             if _database_name not in db_list:
-                insert_sql = 'INSERT INTO `db_setting`(`db_name`,`create_time`,`db_size`,`ip_cnt`) VALUES("{0}","{1}","{2}","{3}");'.format(_database_name,_database_time,_database_size,_database_ip_cnt)
+                insert_sql = 'INSERT INTO `db_setting`(`db_name`,`create_time`,`db_size`,`ip_cnt`,`online_status`) VALUES("{0}","{1}","{2}","{3}","{4}");'.format(_database_name,_database_time,_database_size,_database_ip_cnt,_database_online_status)
                 myquery.query_database('empty',insert_sql)
             else:
-                update_sql = 'UPDATE `db_setting` SET `db_size`="{0}",`ip_cnt`={1} WHERE db_name = "{2}";'.format(_database_size,_database_ip_cnt,_database_name)
+                update_sql = 'UPDATE `db_setting` SET `db_size`="{0}",`ip_cnt`={1},`online_status`="{2}" WHERE db_name = "{3}";'.format(_database_size,_database_ip_cnt,_database_online_status,_database_name)
                 myquery.query_database('empty',update_sql)
 
 
@@ -598,7 +603,6 @@ def database_detailed_info() -> list:
     # print('-------')
     # print(ip_size_dict)
 
-
     query_sql = 'SELECT TABLE_SCHEMA,CREATE_TIME FROM information_schema.TABLES WHERE TABLE_NAME = "metrics_counter";'
     query_items = myquery.query_database('empty', query_sql)
     res_list = []
@@ -611,6 +615,19 @@ def database_detailed_info() -> list:
                 'ip_cnt': ip_size_dict[item['TABLE_SCHEMA']],
             })
     res_list.sort(key=lambda k: k['time'])
+
+    status_cnt = 0
+    for i in range(len(res_list)-1, -1, -1):
+        status_cnt = status_cnt + 1
+        if status_cnt > 10:
+            break
+        query_sql = 'SELECT count( public_ip ) AS online_size FROM {0}.kadinfo_root WHERE last_update_time > {1};'.format(res_list[i]['name'],int(time.time())-300)
+        # query_sql = 'SELECT * from {0}.kadinfo_root ORDER BY last_update_time;'.format(res_list[i]['name'])
+        # print(query_sql)
+        query_items = myquery.query_database('empty',query_sql)
+        # print('online_size:',query_items[0]['online_size'])
+        res_list[i]['online_size'] = query_items[0]['online_size']
+
     return res_list
     
     

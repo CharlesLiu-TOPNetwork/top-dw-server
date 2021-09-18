@@ -105,6 +105,7 @@
                 create_time = json[i]['create_time'];
                 db_size = json[i]['db_size'];
                 ip_cnt = json[i]['ip_cnt'];
+                online_status = json[i]['online_status'];
                 reserve = json[i]['reserve'];
                 button = ''
                 // <td><input type="button" id="uniqe_id_1" class = "reserve" value="reserve" ></td>
@@ -118,6 +119,7 @@
                 html += '<td>' + create_time + '</td>';
                 html += '<td>' + db_size + '</td>';
                 html += '<td>' + ip_cnt + '</td>';
+                html += '<td>' + online_status + '</td>';
                 html += '<td>' + reserve + '</td>';
                 html += '<td>' + button + '</td>';
                 html += '</tr>';
@@ -148,6 +150,7 @@
             <th>创建时间</th>
             <th>数据库大小</th>
             <th>节点个数</th>
+            <th>节点agent在线状态</th>
             <th>是否保留</th>
             <th>操作</th>
         </tr>
