@@ -482,6 +482,7 @@ def query_counter(database, category, tag):
     data_lists = {
         'count': {},
         'value': {},
+        'rate': {},
     }
     for item in query_items:
         ip = item['public_ip']
@@ -497,6 +498,13 @@ def query_counter(database, category, tag):
             res_item[ip][ts] = {}
         res_item[ip][ts]['count'] = item['count']
         res_item[ip][ts]['value'] = item['value']
+        if item['count'] == 0 and item['value'] == 0:
+            res_item[ip][ts]['rate'] = 1
+        elif item['count'] == 0:
+            res_item[ip][ts]['rate'] = 0
+        else:
+            res_item[ip][ts]['rate'] = round(item['value']/item['count'],3)
+
 
     x_list.sort()
 
@@ -663,12 +671,19 @@ def query_ip_category_metrics():
                 'value_series' : {
                     'count':[],
                     'value':[],
+                    'rate':[],
                 },
             }
         ts = item['send_timestamp']
         res_item[tag]['list_x'].append(ts)
         res_item[tag]['value_series']['count'].append(item['count'])
         res_item[tag]['value_series']['value'].append(item['value'])
+        if item['value'] == 0 and item['count'] == 0:
+            res_item[tag]['value_series']['rate'].append(1)
+        elif item['value']==0:
+            res_item[tag]['value_series']['rate'].append(0)
+        else:
+            res_item[tag]['value_series']['rate'].append(round(item['value']/item['count'],3))
 
     res = render_template('joint/body_div_line.html', name = "metrics_counter")
     for _tag,_value in res_item.items():
