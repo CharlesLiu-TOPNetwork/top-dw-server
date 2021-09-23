@@ -517,9 +517,9 @@ def query_counter(database, category, tag):
                     _list.append(None)
 
     # print(data_lists)
-    res = render_template('joint/body_div_line.html', name=category+tag)
+    res = render_template('joint/body_div_line.html', name=category+'_'+tag)
     for _key, data_list in data_lists.items():
-        res = res + render_template('joint/body_div_line.html', name=_key)
+        res = res + render_template('joint/body_div_line.html', name='')
         res = res + render_template('joint/body_big_line_chart_for_one_metrics_tag.html.j2',
                                     name=_key, data_list=format_data_list_to_str(data_list), x_list=format_timestamp_list(x_list), append_info = '[' + database + ']' + category + '_' + tag)
     return res
@@ -572,9 +572,9 @@ def query_flow(database, category, tag):
                     _list.append(None)
 
     # print(data_lists)
-    res = render_template('joint/body_div_line.html', name=category+tag)
+    res = render_template('joint/body_div_line.html', name=category+'_'+tag)
     for _key, data_list in data_lists.items():
-        res = res + render_template('joint/body_div_line.html', name=_key)
+        res = res + render_template('joint/body_div_line.html', name='')
         res = res + render_template('joint/body_big_line_chart_for_one_metrics_tag.html.j2',
                                     name=_key, data_list=format_data_list_to_str(data_list), x_list=format_timestamp_list(x_list), append_info = '[' + database + ']' + category + '_' + tag)
     return res
@@ -623,9 +623,9 @@ def query_timer(database, category, tag):
                     _list.append(None)
 
     # print(data_lists)
-    res = render_template('joint/body_div_line.html', name=category+tag)
+    res = render_template('joint/body_div_line.html', name=category+'_'+tag)
     for _key, data_list in data_lists.items():
-        res = res + render_template('joint/body_div_line.html', name=_key)
+        res = res + render_template('joint/body_div_line.html', name='')
         res = res + render_template('joint/body_big_line_chart_for_one_metrics_tag.html.j2',
                                     name=_key, data_list=format_data_list_to_str(data_list), x_list=format_timestamp_list(x_list), append_info = '[' + database + ']' + category + '_' + tag)
     return res
@@ -688,7 +688,7 @@ def query_ip_category_metrics():
     res = render_template('joint/body_div_line.html', name = "metrics_counter")
     for _tag,_value in res_item.items():
         res = res + render_template('joint/body_small_line_chart_for_one_metrics_tag_one_ip.html.j2', name=_tag,
-                                    value_series=_value['value_series'], list_x=format_timestamp_list(_value['list_x']), append_info = '[' + database + ']' + category + '_' + ip)
+                                    value_series=_value['value_series'], list_x=format_timestamp_list(_value['list_x']), append_info = '[' + database + '] ' + ip + ' ' + category)
 
 
     res = res + render_template('joint/body_div_line.html', name = "metrics_timer")
@@ -719,7 +719,7 @@ def query_ip_category_metrics():
 
     for _tag,_value in res_item.items():
         res = res + render_template('joint/body_small_line_chart_for_one_metrics_tag_one_ip.html.j2', name=_tag,
-                                    value_series=_value['value_series'], list_x=format_timestamp_list(_value['list_x']), append_info = '[' + database + ']' + category + '_' + ip)
+                                    value_series=_value['value_series'], list_x=format_timestamp_list(_value['list_x']), append_info = '[' + database + ']' + ip + ' ' + category)
     
     res = res + render_template('joint/body_div_line.html', name = "metrics_flow")
     # metrics_flow:
@@ -751,7 +751,7 @@ def query_ip_category_metrics():
 
     for _tag,_value in res_item.items():
         res = res + render_template('joint/body_small_line_chart_for_one_metrics_tag_one_ip.html.j2', name=_tag,
-                                    value_series=_value['value_series'], list_x = format_timestamp_list(_value['list_x']), append_info = '[' + database + ']' + category + '_' + ip)
+                                    value_series=_value['value_series'], list_x = format_timestamp_list(_value['list_x']), append_info = '[' + database + ']' + ip + ' ' + category)
 
 
     return res
@@ -1439,7 +1439,7 @@ def query_ip_vnode_status():
         res_item['edge'].append(item['edge'])
 
     res = render_template('joint/body_center_line_chart_for_vnode_status.html.j2',
-                          name='vnode_status', value_series=res_item, list_x=format_timestamp_list(list_x),append_info = public_ip)
+                          name='vnode_status', value_series=res_item, list_x=format_timestamp_list(list_x),append_info = '[' + database + '] ' + public_ip)
     return res
 
 # ![api] query one database ips
