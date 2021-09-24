@@ -1559,7 +1559,8 @@ def query_tags_raw():
 
 def run():
     slogging.start_log_monitor()
-    app.run(host="0.0.0.0", port= 8080, debug=True)
+    # app.run(host="0.0.0.0", port= 8080, debug=True)
+    app.run(host="0.0.0.0", port= 8080)
     #app.run()
 
 if __name__ == '__main__':

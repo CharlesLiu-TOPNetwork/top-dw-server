@@ -38,7 +38,7 @@ restart_dashboard_interval = 180 # every three hours
 
 consumer_process_count = 13
 proxy_gunicorn_process_count = 5
-dash_process_count = 2
+dash_process_count = 1
 disk_need_clen = False
 
 project_path = '/home/charles/project/top-dw-server'
@@ -621,7 +621,7 @@ def database_detailed_info() -> list:
         status_cnt = status_cnt + 1
         if status_cnt > 10:
             break
-        query_sql = 'SELECT count( public_ip ) AS online_size FROM {0}.kadinfo_root WHERE last_update_time > {1};'.format(res_list[i]['name'],int(time.time())-300)
+        query_sql = 'SELECT count( public_ip ) AS online_size FROM `{0}`.kadinfo_root WHERE last_update_time > {1};'.format(res_list[i]['name'],int(time.time())-300)
         # query_sql = 'SELECT * from {0}.kadinfo_root ORDER BY last_update_time;'.format(res_list[i]['name'])
         # print(query_sql)
         query_items = myquery.query_database('empty',query_sql)
