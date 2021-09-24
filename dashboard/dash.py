@@ -672,8 +672,12 @@ def query_ip_category_metrics():
                     'count':[],
                     'value':[],
                     'rate':[],
+                    'value_tps':[],
                 },
             }
+        last_ts = res_item[tag]['list_x'][-1] if len(res_item[tag]['list_x']) else item['send_timestamp']
+        last_value = res_item[tag]['value_series']['value'][-1] if len(res_item[tag]['value_series']['value']) else item['value']
+        
         ts = item['send_timestamp']
         res_item[tag]['list_x'].append(ts)
         res_item[tag]['value_series']['count'].append(item['count'])
@@ -684,6 +688,7 @@ def query_ip_category_metrics():
             res_item[tag]['value_series']['rate'].append(0)
         else:
             res_item[tag]['value_series']['rate'].append(round(item['value']/item['count'],3))
+        res_item[tag]['value_series']['value_tps'].append(0 if last_ts == ts else (item['value']-last_value)/(ts-last_ts))
 
     res = render_template('joint/body_div_line.html', name = "metrics_counter")
     for _tag,_value in res_item.items():
