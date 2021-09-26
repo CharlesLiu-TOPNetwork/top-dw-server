@@ -261,6 +261,25 @@
 
                 });
             });
+            $("#tmp_test").click(function(){
+                htmlobj = $.ajax({
+                    url: "/tmp_test_page/",
+                    async: true,
+                    beforeSend: function () {
+                        $("#main_page").animate({ opacity: .4 }, 500, function () { })
+                        $("#loading").show();
+                        console.log("before send");
+                    },
+                    complete: function () {
+                        $("#main_page").animate({ opacity: 1 }, 500, function () { })
+                        $("#loading").hide();
+                        $("#main_page").html(htmlobj.responseText);
+                        // console.log(htmlobj.responseText)
+                        console.log("after send");
+                    },
+
+                });
+            });
         })
     </script>
 </head>
@@ -276,6 +295,7 @@
         <button id="tools_1_store_cache_hit" style="width:12%">store_cache_hit</button>
         <button id="tools_1_txpool" style="width:12%">txpool</button>
         <button id="db_tools" style="width:10%">DB</button>
+        {# <button id="tmp_test" style="width:3%">test</button> #}
     </div>
 
     <div id="loading" style="width:66px;height:66px;position:absolute;top:50%;left:50%;">

@@ -1,0 +1,135 @@
+<div class= "echartdiv" id="{{ name }}" ></div>
+<script type="text/javascript">
+    var myChart_{{ index }} = echarts.init(document.getElementById('{{ name }}'));
+    var cal_flag_{{ index }} = 0;
+    function cal_tps_{{ index }}(option){
+        count_data = option.series.find((x) => x['name'] == 'count')['data']
+        value_data = option.series.find((x) => x['name'] == 'value')['data']
+        ts_data = option.xAxis[0]['data']
+
+        var count_tps_data = new Array()
+        var value_tps_data = new Array()
+        count_tps_data.push(0)
+        value_tps_data.push(0)
+        for(i = 1; i< ts_data.length;i++){
+            var date1 = new Date(ts_data[i])
+            var date0 = new Date(ts_data[i-1])
+            count_tps_data.push((((count_data[i] - count_data[i-1]) / ((date1 - date0) / 1000)).toFixed(2)))
+            value_tps_data.push((((value_data[i] - value_data[i-1]) / ((date1 - date0) / 1000)).toFixed(2)))
+        }
+        
+        count_tps_series_data = {
+            type:'line',
+            name:'count_tps',
+            data: count_tps_data,
+        }
+        value_tps_series_data = {
+            type:'line',
+            name:'value_tps',
+            data: value_tps_data,
+        }
+        
+        koption_{{ index }}.legend.data.push('count_tps');
+        koption_{{ index }}.series.push(count_tps_series_data)
+        
+        koption_{{ index }}.legend.data.push('value_tps');
+        koption_{{ index }}.series.push(value_tps_series_data)
+        
+        myChart_{{ index }}.setOption(koption_{{ index }}, true)
+        return
+    };
+    var option_{{ index }} = {
+        title: {
+            text: '{{ name }}',
+            subtext : 'from {{ append_info }}',
+            textStyle:{
+                width: 450,
+                overflow: "break",
+            },
+        },
+        toolbox:{
+            show: true,
+            feature: {
+                dataZoom:{
+                    yAxisIndex: "none"
+                },
+                dataView: {
+                    readOnly: true
+                },
+                restore: {},
+                saveAsImage: {
+                    name:"{{ append_info }}_{{ name }}"
+                },
+                myTool1: {
+                    show: true,
+                    title: '计算tps',
+                    icon: 'path://M432.45,595.444c0,2.177-4.661,6.82-11.305,6.82c-6.475,0-11.306-4.567-11.306-6.82s4.852-6.812,11.306-　　　　　　6.812C427.841,588.632,432.452,593.191,432.45,595.444L432.45,595.444z M421.155,589.876c-3.009,0-5.448,2.495-5.448,5.572s2.439,5.572,5.448,5.572c3.01,0,5.449-2.495,5.449-5.572C426.604,592.371,424.165,589.876,421.155,589.876L421.155,589.876z M421.146,591.891c-1.916,0-3.47,1.589-3.47,3.549c0,1.959,1.554,3.548,3.47,3.548s3.469-1.589,3.469-3.548C424.614,593.479,423.062,591.891,421.146,591.891L421.146,591.891zM421.146,591.891',
+                    onclick: function () {
+                        if(cal_flag_{{ index }} ==1 ) return;
+                        cal_flag_{{ index }} = 1;
+                        var t_option = myChart_{{ index }}.getOption()
+                        cal_tps_{{ index }}(t_option)                 
+                    }
+                },
+            },
+            right:'10%'
+        },
+        tooltip:{
+            trigger: 'axis'
+        },
+        dataZoom: [{
+            type: 'slider',
+            show: true,
+            xAxisIndex: [0],
+            left: '12%', 
+            bottom: '8%',
+            start: 0,
+            end: 100 
+        }],
+        legend:{
+            data:[
+                {%- for series_name in value_series.keys() -%}
+                    '{{ series_name }}',
+                {%- endfor -%}
+            ],
+            top:"10%",
+            selected:{
+                'count':false,
+                'rate':false
+            }
+        },
+        grid:{
+            left: "13%",
+            right: "10%",
+            bottom: "20%",
+            top: "20%",
+        },
+        xAxis: {
+            name: "发送时间",
+            type: 'category',
+            data: [
+                {%- for item in list_x -%}
+                    '{{ item }}',
+                {%- endfor -%}
+            ]
+        },
+        yAxis: {
+            type: 'value'
+        },
+        series: [
+            {%- for item in value_series -%}
+            {
+                type: 'line',
+                name: '{{item}}',
+                data: [
+                    {%- for _v in value_series[item] -%}
+                            {{ _v }},
+                    {%- endfor -%}
+                ]
+            },
+            {%- endfor -%}
+        ]
+    };
+    var koption_{{ index }} = option_{{ index }};
+    option_{{ index }} && myChart_{{ index }}.setOption(option_{{ index }});
+</script>

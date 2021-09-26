@@ -659,6 +659,8 @@ def query_ip_category_metrics():
     ip = request.args.get('public_ip') or None
     category = request.args.get('category') or None
 
+    chart_index = 0
+
     # metrics_counter:
     query_sql = 'SELECT tag,send_timestamp,count,value FROM metrics_counter WHERE public_ip = "{0}" AND category = "{1}" ORDER BY tag,send_timestamp;'.format(ip, category)
     query_items = myquery.query_database(database,query_sql)
@@ -672,11 +674,11 @@ def query_ip_category_metrics():
                     'count':[],
                     'value':[],
                     'rate':[],
-                    'value_tps':[],
+                    # 'value_tps':[],
                 },
             }
-        last_ts = res_item[tag]['list_x'][-1] if len(res_item[tag]['list_x']) else item['send_timestamp']
-        last_value = res_item[tag]['value_series']['value'][-1] if len(res_item[tag]['value_series']['value']) else item['value']
+        # last_ts = res_item[tag]['list_x'][-1] if len(res_item[tag]['list_x']) else item['send_timestamp']
+        # last_value = res_item[tag]['value_series']['value'][-1] if len(res_item[tag]['value_series']['value']) else item['value']
         
         ts = item['send_timestamp']
         res_item[tag]['list_x'].append(ts)
@@ -688,12 +690,13 @@ def query_ip_category_metrics():
             res_item[tag]['value_series']['rate'].append(0)
         else:
             res_item[tag]['value_series']['rate'].append(round(item['value']/item['count'],3))
-        res_item[tag]['value_series']['value_tps'].append(0 if last_ts == ts else (item['value']-last_value)/(ts-last_ts))
+        # res_item[tag]['value_series']['value_tps'].append(0 if last_ts == ts else (item['value']-last_value)/(ts-last_ts))
 
     res = render_template('joint/body_div_line.html', name = "metrics_counter")
     for _tag,_value in res_item.items():
-        res = res + render_template('joint/body_small_line_chart_for_one_metrics_tag_one_ip.html.j2', name=_tag,
+        res = res + render_template('joint/body_small_line_chart_for_one_metrics_tag_one_ip_with_tps.html.j2', name=_tag,index = chart_index,
                                     value_series=_value['value_series'], list_x=format_timestamp_list(_value['list_x']), append_info = '[' + database + '] ' + ip + ' ' + category)
+        chart_index = chart_index + 1
 
 
     res = res + render_template('joint/body_div_line.html', name = "metrics_timer")
@@ -1284,47 +1287,11 @@ def query_store_compared_cache_hit():
 
 
 # ![api] query xblockstore [hit-miss]
-@app.route('/query_xblockstore_hit',methods=['GET'])
-@app.route('/query_xblockstore_hit/',methods=['GET'])
-def query_xblockstore_hit():
-    # database = request.args.get('database') or None
-    # public_ip = request.args.get('public_ip') or None
-    # category = "blockstore"
-    # query_tags_sql = 'SELECT DISTINCT tag FROM tags_table where category = "' + category + '" and type = "counter" ;'
-    # query_items = myquery.query_database(database,query_tags_sql)
-    # tag_list = [l['tag'] for l in query_items]
-    # print(tag_list)
+@app.route('/tmp_test_page',methods=['GET'])
+@app.route('/tmp_test_page/',methods=['GET'])
+def tmp_test_page():
 
-    # res_page = ""
-    # query_sql = 'SELECT send_timestamp, tag, count, value FROM `metrics_counter` WHERE category = "blockstore" AND tag REGEXP "access_from*" AND public_ip = "{0}";'.format(public_ip)
-    # query_items = myquery.query_database(database,query_sql)
-    # if not query_items:
-    #     res_page += "None data with blockstore"
-    # else:
-    #     res_map = {}
-    #     tag_list = []
-    #     ts_list = []
-    #     for item in query_items:
-    #         ts = item['send_timestamp']
-    #         tag = item['tag']
-    #         if ts not in res_map:
-    #             res_map[ts]={}
-    #         if ts not in ts_list:
-    #             ts_list.append(ts)
-    #         if tag not in res_map[ts]:
-    #             res_map[ts][tag] = []
-    #         if tag not in tag_list:
-    #             tag_list.append(tag)
-    #         res_map[ts][tag].append(item['count'])
-    #         res_map[ts][tag].append(item['value'])
-    #     ts_list.sort()
-    #     res_page += render_template('joint/body_big_line_chart_for_cache_rate.html.j2',name = public_ip + " blockstore",ts_list = format_timestamp_list(ts_list),tag_list = tag_list,res_map = format_cache_hit_data_list_to_str(tag_list,res_map))
-
-
-    # print(res_map)
-
-    return render_template('tmp_test.html')
-    return res_page
+    return render_template('tmp.html')
 
 # ![api] set database manager info
 @app.route('/update_db_reserve',methods=['GET'])
