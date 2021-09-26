@@ -14,8 +14,13 @@
         for(i = 1; i< ts_data.length;i++){
             var date1 = new Date(ts_data[i])
             var date0 = new Date(ts_data[i-1])
-            count_tps_data.push((((count_data[i] - count_data[i-1]) / ((date1 - date0) / 1000)).toFixed(2)))
-            value_tps_data.push((((value_data[i] - value_data[i-1]) / ((date1 - date0) / 1000)).toFixed(2)))
+            if(!(date1 - date0)){
+                count_tps_data.push(0)
+                value_tps_data.push(0)
+            } else {
+                count_tps_data.push((((count_data[i] - count_data[i-1]) / ((date1 - date0) / 1000)).toFixed(2)))
+                value_tps_data.push((((value_data[i] - value_data[i-1]) / ((date1 - date0) / 1000)).toFixed(2)))
+            }
         }
         
         count_tps_series_data = {
