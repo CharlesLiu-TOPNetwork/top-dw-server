@@ -39,6 +39,10 @@
         
         koption_{{ index }}.legend.data.push('value_tps');
         koption_{{ index }}.series.push(value_tps_series_data)
+
+        koption_{{ index }}.legend.selected['count'] = false
+        koption_{{ index }}.legend.selected['value'] = false
+        koption_{{ index }}.legend.selected['rate'] = false
         
         myChart_{{ index }}.setOption(koption_{{ index }}, true)
         return
