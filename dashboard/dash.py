@@ -1400,9 +1400,12 @@ def query_ip_vnode_status():
         'archive': [],
         'edge': [],
     }
+    new_status = False
     for item in query_items:
         ts = item['timestamp']
         list_x.append(ts)
+        if new_status == False and (item['rec']<0 or item['zec']<0 or item['archive']<0 or item['edge']<0 or (item['auditor'] !=4 and item['auditor'] !=0)  or item['validator'] > 3):
+            new_status = True
         res_item['rec'].append(item['rec'])
         res_item['zec'].append(item['zec'])
         res_item['auditor'].append(item['auditor'])
@@ -1410,7 +1413,11 @@ def query_ip_vnode_status():
         res_item['archive'].append(item['archive'])
         res_item['edge'].append(item['edge'])
 
-    res = render_template('joint/body_center_line_chart_for_vnode_status.html.j2',
+    if new_status:
+        res = render_template('joint/body_center_line_chart_for_vnode_status2.html.j2',
+                          name='vnode_status', value_series=res_item, list_x=format_timestamp_list(list_x),append_info = '[' + database + '] ' + public_ip)
+    else:
+        res = render_template('joint/body_center_line_chart_for_vnode_status.html.j2',
                           name='vnode_status', value_series=res_item, list_x=format_timestamp_list(list_x),append_info = '[' + database + '] ' + public_ip)
     return res
 

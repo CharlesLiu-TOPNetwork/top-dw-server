@@ -1,0 +1,111 @@
+<div class= "median_echartdiv" id="{{ name }}" ></div>
+<script type="text/javascript">
+    var myChart = echarts.init(document.getElementById('{{ name }}'));
+    var option = {
+        title: {
+            text: '{{ name }}',
+            subtext: 'from {{ append_info }}',
+            textStyle:{
+                width: 450,
+                overflow: "break",
+            },
+        },
+        toolbox:{
+            show: true,
+            feature: {
+                dataZoom:{
+                    yAxisIndex: "none",
+                    type: "inside"
+                },
+                dataView: {
+                    readOnly: true
+                },
+                restore: {},
+                saveAsImage: {
+                    name:"{{ append_info }}_{{ name }}"
+                }
+            },
+            right:'10%'
+        },
+        tooltip:{
+            trigger: 'axis'
+        },
+        dataZoom: [{
+            type: 'slider',
+            show: true,
+            xAxisIndex: [0],
+            left: '12%', 
+            bottom: '8%',
+            start: 0,
+            end: 100 
+        }],
+        legend:{
+            data:[
+                {%- for series_name in value_series.keys() -%}
+                    '{{ series_name }}',
+                {%- endfor -%}
+            ],
+            top:"10%",
+            selected:{
+                'count':false
+            }
+        },
+        grid:{
+            left: "13%",
+            right: "10%",
+            bottom: "20%",
+            top: "20%",
+        },
+        xAxis: {
+            name: "时间戳",
+            type: 'category',
+            data: [
+                {%- for item in list_x -%}
+                    '{{ item }}',
+                {%- endfor -%}
+            ]
+        },
+        yAxis: {
+            min:-4,
+            max:6,
+            name: "角色",
+            type: 'value',
+            interval: 1,
+            axisLabel:{
+                show:true,
+                formatter: function(value,index){
+                    var res = "";
+                    switch(value){
+                        case -4: res = "edge";break;
+                        case -3: res = "archive";break;
+                        case -2: res = "zec";break;
+                        case -1: res = "rec";break;
+                        case 0: res="";break;
+                        case 1: res="adv1";break;
+                        case 2: res="adv2";break;
+                        case 3: res="con64";break;
+                        case 4: res="con65";break;
+                        case 5: res="con66";break;
+                        case 6: res="con67";break;
+                        default:"?";
+                    }
+                    return res;
+                },
+            }
+        },
+        series: [
+            {%- for item in value_series -%}
+            {
+                type: 'line',
+                name: '{{item}}',
+                data: [
+                    {%- for _v in value_series[item] -%}
+                            {{ _v }},
+                    {%- endfor -%}
+                ]
+            },
+            {%- endfor -%}
+        ]
+    };
+    option && myChart.setOption(option);
+</script>
