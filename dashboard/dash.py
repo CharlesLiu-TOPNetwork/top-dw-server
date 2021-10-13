@@ -75,6 +75,13 @@ def verify_password(username, password):
 def hello_world():
     return '{0} Hello, World!'.format(auth.username())
 
+# ![for_QA][raw_data_api][help_function]
+def check_db_exist(db_name: str) -> bool:
+    # check db exist
+    database_list = [k['name'] for k in database_time()]
+    if db_name not in database_list:
+        return False
+    return True
 
 # ![for_QA][raw_data_api][help_page]
 @app.route('/dw-api/help',methods=['GET'])
@@ -99,6 +106,8 @@ def raw_query_category():
     
     if not env:
         return "plz set env"
+    if not check_db_exist(env):
+        return "env not exist"
     if type and type not in ['array_counter','alarm','counter','timer','flow']:
         return 'type should be one of [array_counter / alarm / counter / timer / flow]'
     
@@ -125,6 +134,8 @@ def raw_query_tag():
     
     if not env:
         return "plz set env"
+    if not check_db_exist(env):
+        return "env not exist"
     if not category:
         return "plz set category"
     if type not in ['array_counter','alarm','counter','timer','flow']:
@@ -150,15 +161,12 @@ def raw_query_txpool():
 
     if not env:
         return "plz set env"
+    if not check_db_exist(env):
+        return "env not exist"
     if not ip:
         return "plz set ip"
     if not type or type not in ['state', 'receipt', 'cache']:
         return "plz set type [ state / receipt / cache ]"
-    
-    # check db exist
-    database_list = [k['name'] for k in database_time()]
-    if env not in database_list:
-        return "env not exist"
 
     sql = ''
     # sql_template = 'SELECT * FROM (( SELECT * FROM txpool_'+ type +' {0} ORDER BY send_timestamp DESC ) AS tmp ) GROUP BY public_ip;'
@@ -209,6 +217,8 @@ def raw_query_metrics():
 
     if not env:
         return "plz set env"
+    if not check_db_exist(env):
+        return "env not exist"
     if not ip:
         return "plz set ip"
     if not type or type not in ['counter', 'timer', 'flow']:
@@ -217,11 +227,6 @@ def raw_query_metrics():
         return "plz set category && tag"
     if latest and latest not in ['true','false']:
         return "plz set latest [ true(default) / false ]"
-
-    # check db exist
-    database_list = [k['name'] for k in database_time()]
-    if env not in database_list:
-        return "env not exist"
 
     # check category_tag exist
     query_sql = 'SELECT DISTINCT tag FROM tags_table where category = "' + category + '" and type = "' + type + '" ;'
