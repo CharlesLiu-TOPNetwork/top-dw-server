@@ -2,41 +2,104 @@
 <div class= "echart_big_div" id="{{ name }}" ></div>
 <script type="text/javascript">
     var myChart_{{ name }}_{{index}} = echarts.init(document.getElementById('{{ name }}'));
-    var cal_flag_{{index}} = 0;
+    var cal_tps_flag_{{index}} = 0;
+    var cal_sum_flag_{{index}} = 0;
     var show_tps{{ index }} = 0;
+    var origin_data{{ index }} = new Array();
+    var tps_data{{ index }} = new Array();
     function cal_tps_{{index}}(option){
-        if(cal_flag_{{ index }}){
+        if(cal_tps_flag_{{ index }}){
             if(show_tps{{ index }}){
                 show_tps{{ index }} = 0;
-                myChart_{{ name }}_{{index}}.setOption(option_{{ name }});
+                for(__i = 0;__i < option.series.length;__i++){
+                    option.series[__i].data = origin_data{{ index }}[__i];
+                }
+                myChart_{{ name }}_{{index}}.setOption(option);
             }else{
                 show_tps{{ index }} = 1;
-                myChart_{{ name }}_{{index}}.setOption(koption_{{ name }});
+                for(__i = 0;__i < option.series.length;__i++){
+                    option.series[__i].data = tps_data{{ index }}[__i];
+                }
+                myChart_{{ name }}_{{index}}.setOption(option);
             }
             return;
         }
 
-        {# console.log(option); #}
         data_array = option.series;
 
         for(_ind = 0;_ind < data_array.length;++_ind){
+            origin_data{{ index }}.push(data_array[_ind].data)
+            
             var this_tps_data = new Array()
+            
             this_tps_data.push(0);
-            {# console.log(data_array[_ind].data); #}
+
             for(__i = 1; __i < data_array[_ind].data.length;++__i){
                 if(data_array[_ind].data[__i] && data_array[_ind].data[__i-1]){
                     this_tps_data.push(((data_array[_ind].data[__i]-data_array[_ind].data[__i-1])/300).toFixed(2));
                 }else{
-                    this_tps_data.push(0);
+                    res = 0
+                    if(data_array[_ind].data[__i]){
+                        for(__j = __i-2;__j>=0;__j--){
+                            if(data_array[_ind].data[__j]){
+                                res = (((data_array[_ind].data[__i]-data_array[_ind].data[__j])/300/(__i-__j)).toFixed(2));
+                                break;
+                            }
+                        }
+                        
+                    }
+                    if(res !=0){
+                        for(__k = this_tps_data.length-1;__k>=0;__k--){
+                            if(this_tps_data[__k] == 0){
+                                this_tps_data[__k] = res;
+                            }else{
+                                break;
+                            }
+                        }
+                    }
+                    this_tps_data.push(res);
                 }
             }
-            {# console.log(this_tps_data); #}
-            koption_{{ name }}.series[_ind].data = this_tps_data;
+            tps_data{{ index }}.push(this_tps_data);
+
+            option_{{ name }}.series[_ind].data = this_tps_data;
         }
         show_tps{{ index }} = 1;
-        myChart_{{ name }}_{{index}}.setOption(koption_{{ name }});
+        myChart_{{ name }}_{{index}}.setOption(option_{{ name }}, true);
     };
     
+    function cal_sum_{{index}}(option){
+        if(cal_sum_flag_{{ index }}){
+            return;
+        }
+        console.log(option);
+
+        data_array = option.series;
+        
+        var sum_data_array = new Array();
+
+        for(__i = 0;__i < data_array[0].data.length;__i++){
+            var sum = 0;
+            for(_ind = 0; _ind < data_array.length;++_ind){
+                sum = sum + Number(data_array[_ind].data[__i]);
+            }
+            sum_data_array.push(sum.toFixed(2));
+        }
+        console.log(sum_data_array);
+
+        sum_line = {
+            type: 'line',
+            name: 'sum',
+            data: sum_data_array,
+        }
+
+    
+        option_{{ name }}.legend.data.push('sum');
+        option_{{ name }}.series.push(sum_line);
+
+        myChart_{{ name }}_{{index}}.setOption(option_{{ name }}, true);
+
+    };
     
     var option_{{ name }} = {
         title: {
@@ -65,12 +128,22 @@
                     title: '计算tps',
                     icon: 'path://M432.45,595.444c0,2.177-4.661,6.82-11.305,6.82c-6.475,0-11.306-4.567-11.306-6.82s4.852-6.812,11.306-　　　　　　6.812C427.841,588.632,432.452,593.191,432.45,595.444L432.45,595.444z M421.155,589.876c-3.009,0-5.448,2.495-5.448,5.572s2.439,5.572,5.448,5.572c3.01,0,5.449-2.495,5.449-5.572C426.604,592.371,424.165,589.876,421.155,589.876L421.155,589.876z M421.146,591.891c-1.916,0-3.47,1.589-3.47,3.549c0,1.959,1.554,3.548,3.47,3.548s3.469-1.589,3.469-3.548C424.614,593.479,423.062,591.891,421.146,591.891L421.146,591.891zM421.146,591.891',
                     onclick: function () {
-                        {# if(cal_flag_{{ index }} ==1 ) return; #}
-                        var t_option = myChart_{{ name }}_{{index}}.getOption()
-                        cal_tps_{{ index }}(t_option)                 
-                        cal_flag_{{ index }} = 1;
+                        var t_option = myChart_{{ name }}_{{index}}.getOption();
+                        cal_tps_{{ index }}(t_option);
+                        cal_tps_flag_{{ index }} = 1;
                     }
-                }
+                },
+                myTool2:{
+                    show: true,
+                    title: '求和',
+                    icon:'path://M855.078753 691.269943c-36.533055-28.92682-87.633896-78.555124-87.633896-154.024979l0-59.966767c0-99.758028-51.464115-170.634262-127.776152-217.33591l0-61.002352c0-74.499761-57.265238-134.918829-127.909182-134.918829-70.643943 0-127.915321 60.420091-127.915321 134.918829l0 60.82839c-76.470649 46.647413-128.048351 117.627001-128.048351 217.509872l0 59.966767c0 75.765591-51.516304 125.316124-88.074941 154.363693-6.494924 4.329609-12.384052 9.558703-17.517979 15.531741-0.165776 0.157589-0.331551 0.310062-0.497327 0.469698 0 0 0.057305 0.01535 0.081864 0.01535-13.543458 15.924691-21.844517 36.892235-21.844517 59.962673l0.110517 93.946672c0 16.546861 12.71151 29.985942 28.423353 29.985942l254.272147 0c6.6607 51.134611 48.131207 90.586135 98.488105 90.586135 50.294476 0 91.764983-39.451524 98.404194-90.586135L867.041202 891.520733c15.685237 0 28.428469-13.440104 28.428469-29.985942l-0.110517-95.104031C894.966205 734.675522 878.94737 706.949041 855.078753 691.269943L855.078753 691.269943zM440.696024 198.939935c0-41.325198 31.868825-74.958202 71.062476-74.958202 39.168068 0 71.063499 33.631982 71.063499 74.958202l0 35.323507c-22.621207-6.90527-46.469358-10.803044-71.202669-10.803044-24.651446 0-48.37987 3.880377-70.923306 10.732435L440.696024 198.939935 440.696024 198.939935zM509.235027 952.126043c-34.534538 0-63.345724-26.13217-69.733201-60.611449l139.378397 0C572.520375 925.994895 543.734772 952.126043 509.235027 952.126043L509.235027 952.126043zM838.616826 831.54885 184.89915 831.54885l-0.110517-63.960731c0-9.280364 3.88754-15.886829 7.219425-19.811208l0.248663-0.289596c1.74883-2.036379 3.721765-3.794419 5.884011-5.229095l1.946328-1.305739 1.832741-1.445932c3.9121-3.133364 8.04728-6.251378 12.239765-9.42772 36.833907-27.933189 98.488105-95.161337 98.488105-192.840006l0-59.96165c0-115.730815 89.245603-193.851033 198.973704-193.851033 109.702518 0 198.973704 78.119195 198.973704 193.851033l0 59.96165c0 97.694019 61.622476 164.905794 98.461499 192.840006 4.077875 3.084245 8.079002 6.119371 11.908214 9.138124l1.967818 1.560542 2.080382 1.38044c8.248871 5.409197 13.270235 14.652721 13.491269 24.750707l0.110517 64.638159L838.616826 831.546803zM838.616826 831.54885',
+                    onclick:function(){
+                        console.log("求和");
+                        var t_option = myChart_{{ name }}_{{index}}.getOption();
+                        cal_sum_{{index}}(t_option);
+                        cal_sum_flag_{{index}} = 1;
+                    }
+                },
             },
             right:'10%'
         },
@@ -143,7 +216,8 @@
             {% endfor %}
         ]
     };
-    var koption_{{ name }} = option_{{ name }};
+    {# var koption_{{ name }} = JSON.parse(JSON.stringify((option_{{ name }}))); #}
+    {# var koption_{{ name }} = option_{{ name }}; #}
     option_{{ name }} && myChart_{{ name }}_{{index}}.setOption(option_{{ name }});
 
     var selectArr = myChart_{{ name }}_{{index}}.getOption().legend[0].data;
