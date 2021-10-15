@@ -1,0 +1,168 @@
+<input id="selectall_{{ name }}" type="button" style="float: left;margin:10% 10%;position:relative;" value="全不选" flag="1"/>
+<div class= "echart_big_div" id="{{ name }}" ></div>
+<script type="text/javascript">
+    var myChart_{{ name }}_{{index}} = echarts.init(document.getElementById('{{ name }}'));
+    var cal_flag_{{index}} = 0;
+    var show_tps{{ index }} = 0;
+    function cal_tps_{{index}}(option){
+        if(cal_flag_{{ index }}){
+            if(show_tps{{ index }}){
+                show_tps{{ index }} = 0;
+                myChart_{{ name }}_{{index}}.setOption(option_{{ name }});
+            }else{
+                show_tps{{ index }} = 1;
+                myChart_{{ name }}_{{index}}.setOption(koption_{{ name }});
+            }
+            return;
+        }
+
+        {# console.log(option); #}
+        data_array = option.series;
+
+        for(_ind = 0;_ind < data_array.length;++_ind){
+            var this_tps_data = new Array()
+            this_tps_data.push(0);
+            {# console.log(data_array[_ind].data); #}
+            for(__i = 1; __i < data_array[_ind].data.length;++__i){
+                if(data_array[_ind].data[__i] && data_array[_ind].data[__i-1]){
+                    this_tps_data.push(((data_array[_ind].data[__i]-data_array[_ind].data[__i-1])/300).toFixed(2));
+                }else{
+                    this_tps_data.push(0);
+                }
+            }
+            {# console.log(this_tps_data); #}
+            koption_{{ name }}.series[_ind].data = this_tps_data;
+        }
+        show_tps{{ index }} = 1;
+        myChart_{{ name }}_{{index}}.setOption(koption_{{ name }});
+    };
+    
+    
+    var option_{{ name }} = {
+        title: {
+            text: '{{ name }}',
+            subtext: 'from {{ append_info }}',
+            textStyle:{
+                width: 1200,
+                overflow: "break",
+            },
+        },
+        toolbox:{
+            show: true,
+            feature: {
+                dataZoom:{
+                    yAxisIndex: "none"
+                },
+                dataView: {
+                    readOnly: true
+                },
+                restore: {},
+                saveAsImage: {
+                    name:"{{ append_info }}_{{ name }}"
+                },
+                myTool1:{
+                    show: true,
+                    title: '计算tps',
+                    icon: 'path://M432.45,595.444c0,2.177-4.661,6.82-11.305,6.82c-6.475,0-11.306-4.567-11.306-6.82s4.852-6.812,11.306-　　　　　　6.812C427.841,588.632,432.452,593.191,432.45,595.444L432.45,595.444z M421.155,589.876c-3.009,0-5.448,2.495-5.448,5.572s2.439,5.572,5.448,5.572c3.01,0,5.449-2.495,5.449-5.572C426.604,592.371,424.165,589.876,421.155,589.876L421.155,589.876z M421.146,591.891c-1.916,0-3.47,1.589-3.47,3.549c0,1.959,1.554,3.548,3.47,3.548s3.469-1.589,3.469-3.548C424.614,593.479,423.062,591.891,421.146,591.891L421.146,591.891zM421.146,591.891',
+                    onclick: function () {
+                        {# if(cal_flag_{{ index }} ==1 ) return; #}
+                        var t_option = myChart_{{ name }}_{{index}}.getOption()
+                        cal_tps_{{ index }}(t_option)                 
+                        cal_flag_{{ index }} = 1;
+                    }
+                }
+            },
+            right:'10%'
+        },
+        tooltip:{
+            trigger:'axis',
+            position: [20, 80],
+            formatter: function(params){
+                let astr = '<div>'+params[0].axisValue+'</div>'
+                params = params.filter((a)=>{return typeof(a.data)!="undefined"});
+                params.sort(function(a,b){return b.data-a.data});
+                params.forEach(ele => {
+                const data = ele.data
+                {# if(data){ #}
+                    astr += `
+                        <div style="display: block;height:20px;width:33%;float:left;">
+                        <i style="width: 10px;height: 10px;display: inline-block;background: ${ele.color};border-radius: 10px;"></i>
+                        <span>${ele.seriesName}: ${data}</span>
+                        </div>
+                    `
+                    {# } #}
+                }
+                )
+                const b = '<div style="width: 800px;">' + astr + '<div>'
+                return b
+            }
+        },
+        dataZoom: [{
+                    type: 'slider',
+                    show: true, 
+                    xAxisIndex: [0],
+                    left: '9%', 
+                    bottom: '5%',
+                    start: 0,
+                    end: 100 
+                }],
+        legend:{
+            data:[
+                {%- for item in data_list -%}
+                    '{{ item }}',
+                {%- endfor -%}
+            ],
+            top:"10%",
+        },
+        grid:{
+            left: "10%",
+            right: "10%",
+            bottom: "15%",
+            top: "40%",
+        },
+        xAxis: {
+            name:"发送时间",
+            type: 'category',
+            data:
+            [
+                {%- for item in x_list -%}
+                    '{{ item }}',
+                {%- endfor -%}
+            ]
+        },
+        yAxis: {
+            type: 'value'
+        },
+        series: [
+            {% for k,v in data_list.items() %}
+            {
+                type: 'line',
+                name: '{{ k }}',
+                data:  {{ v }},
+            },
+            {% endfor %}
+        ]
+    };
+    var koption_{{ name }} = option_{{ name }};
+    option_{{ name }} && myChart_{{ name }}_{{index}}.setOption(option_{{ name }});
+
+    var selectArr = myChart_{{ name }}_{{index}}.getOption().legend[0].data;
+    $('#selectall_{{ name }}').click(function () {
+        var flag = $(this).attr('flag');
+        if (flag == 1) {
+            var val = false;
+            $(this).attr('flag', 0);
+            $(this).val('全选中');
+        } else {
+            var val = true;
+            $(this).attr('flag', 1);
+            $(this).val('全不选');
+        }
+        var obj = {};
+        for (var key in selectArr) {
+            obj[selectArr[key]] = val;
+        }
+        option_{{ name }}.legend.selected = obj;
+        myChart_{{ name }}_{{index}}.setOption(option_{{ name }});
+    });
+</script>

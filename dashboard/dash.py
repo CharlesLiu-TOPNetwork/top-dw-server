@@ -523,10 +523,12 @@ def query_counter(database, category, tag):
 
     # print(data_lists)
     res = render_template('joint/body_div_line.html', name=category+'_'+tag)
+    chart_index = 0
     for _key, data_list in data_lists.items():
         res = res + render_template('joint/body_div_line.html', name='')
-        res = res + render_template('joint/body_big_line_chart_for_one_metrics_tag.html.j2',
-                                    name=_key, data_list=format_data_list_to_str(data_list), x_list=format_timestamp_list(x_list), append_info = '[' + database + ']' + category + '_' + tag)
+        res = res + render_template('joint/body_big_line_chart_for_one_metrics_tag_with_tps.html.j2',
+                                    name=_key, data_list=format_data_list_to_str(data_list), x_list=format_timestamp_list(x_list), append_info = '[' + database + ']' + category + '_' + tag, index = chart_index)
+        chart_index = chart_index + 1
     return res
 
 # ![function] used by other apis, return an [category - tag - type:flow]'s all nodes' metrics data (one full picture)
@@ -578,10 +580,12 @@ def query_flow(database, category, tag):
 
     # print(data_lists)
     res = render_template('joint/body_div_line.html', name=category+'_'+tag)
+    chart_index = 0
     for _key, data_list in data_lists.items():
         res = res + render_template('joint/body_div_line.html', name='')
-        res = res + render_template('joint/body_big_line_chart_for_one_metrics_tag.html.j2',
-                                    name=_key, data_list=format_data_list_to_str(data_list), x_list=format_timestamp_list(x_list), append_info = '[' + database + ']' + category + '_' + tag)
+        res = res + render_template('joint/body_big_line_chart_for_one_metrics_tag_with_tps.html.j2',
+                                    name=_key, data_list=format_data_list_to_str(data_list), x_list=format_timestamp_list(x_list), append_info = '[' + database + ']' + category + '_' + tag, index = chart_index)
+        chart_index = chart_index + 1
     return res
 
 # ![function] used by other apis, return an [category - tag - type:timer]'s all nodes' metrics data (one full picture)
@@ -629,10 +633,12 @@ def query_timer(database, category, tag):
 
     # print(data_lists)
     res = render_template('joint/body_div_line.html', name=category+'_'+tag)
+    chart_index = 0
     for _key, data_list in data_lists.items():
         res = res + render_template('joint/body_div_line.html', name='')
-        res = res + render_template('joint/body_big_line_chart_for_one_metrics_tag.html.j2',
-                                    name=_key, data_list=format_data_list_to_str(data_list), x_list=format_timestamp_list(x_list), append_info = '[' + database + ']' + category + '_' + tag)
+        res = res + render_template('joint/body_big_line_chart_for_one_metrics_tag_with_tps.html.j2',
+                                    name=_key, data_list=format_data_list_to_str(data_list), x_list=format_timestamp_list(x_list), append_info = '[' + database + ']' + category + '_' + tag, index = chart_index)
+        chart_index = chart_index + 1
     return res
 
 # ![api] return an [category - tag - type]'s all nodes' metrics data (one full picture)
