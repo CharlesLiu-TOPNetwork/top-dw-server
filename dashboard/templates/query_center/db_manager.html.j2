@@ -61,8 +61,8 @@
 <script type="text/javascript">
     $(document).on('click','.reserve',function (){
         var db_name=$(this).parents("tr").find("td").eq(0).text(); 
-        $(this).parents("tr").find("td").eq(2).text("true");
-        $(this).parents("tr").find("td").eq(3).text("已调整");
+        $(this).parents("tr").find("td").eq(5).text("true");
+        $(this).parents("tr").find("td").eq(6).text("已调整");
 
         update = $.ajax({
             url: "/update_db_reserve/?database="+db_name+"&val=true",
@@ -77,8 +77,8 @@
     });
     $(document).on('click','.not_reserve',function (){
         var db_name=$(this).parents("tr").find("td").eq(0).text(); 
-        $(this).parents("tr").find("td").eq(2).text("false");
-        $(this).parents("tr").find("td").eq(3).text("已调整");
+        $(this).parents("tr").find("td").eq(5).text("false");
+        $(this).parents("tr").find("td").eq(6).text("已调整");
         
         update = $.ajax({
             url: "/update_db_reserve/?database="+db_name+"&val=false",
