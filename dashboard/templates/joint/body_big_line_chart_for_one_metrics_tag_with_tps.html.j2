@@ -34,7 +34,7 @@
             
             this_tps_data.push(0);
 
-            for(__i = 1; __i < data_array[_ind].data.length;++__i){
+            for(__i = 1; __i < data_array[_ind].data.length - 1;++__i){
                 if(data_array[_ind].data[__i] && data_array[_ind].data[__i-1]){
                     this_tps_data.push(((data_array[_ind].data[__i]-data_array[_ind].data[__i-1])/300).toFixed(2));
                 }else{
