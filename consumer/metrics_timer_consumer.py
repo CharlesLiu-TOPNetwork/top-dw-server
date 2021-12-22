@@ -35,7 +35,7 @@ class MetricsTimerConsumer(object):
             "avg_time": 0
         }
         
-        self.cache_num = 10
+        self.cache_num = 100
         self.timer_insert_cache = {
         }
         self.tag_cache = {
@@ -61,14 +61,17 @@ class MetricsTimerConsumer(object):
             # slog.info("begin consume_alarm_with_notry alarm_queue.size is {0}".format(self.alarm_queue_.qsize(self.queue_key_list_)))
             alarm_payload_list = self.alarm_queue_.get_queue_exp(
                 self.queue_key_list_, self.consume_step_)  # return dict or None
-            for alarm_payload in alarm_payload_list:
-                alarm_type = alarm_payload.get('alarm_type')
-                slog.info(alarm_payload)
-                if alarm_type == 'metrics_timer':
-                    slog.info(alarm_payload.get('packet'))
-                    self.metrics_timer_handle(alarm_payload.get('packet'))
-                else:
-                    slog.warn('invalid alarm_type:{0}'.format(alarm_type))
+            if alarm_payload_list:
+                for alarm_payload in alarm_payload_list:
+                    alarm_type = alarm_payload.get('alarm_type')
+                    # slog.info(alarm_payload)
+                    if alarm_type == 'metrics_timer':
+                        # slog.info(alarm_payload.get('packet'))
+                        self.metrics_timer_handle(alarm_payload.get('packet'))
+                    else:
+                        slog.warn('invalid alarm_type:{0}'.format(alarm_type))
+            else:
+                self.metrics_timer_try_store_cache()
         return
 
     def consume_alarm(self):
@@ -78,18 +81,21 @@ class MetricsTimerConsumer(object):
             try:
                 alarm_payload_list = self.alarm_queue_.get_queue_exp(
                     self.queue_key_list_, self.consume_step_)  # return dict or None
-                for alarm_payload in alarm_payload_list:
-                    alarm_type = alarm_payload.get('alarm_type')
-                    if alarm_type == 'metrics_timer':
-                        self.metrics_timer_handle(alarm_payload.get('packet'))
-                    else:
-                        slog.warn('invalid alarm_type:{0}'.format(alarm_type))
+                if alarm_payload_list:
+                    for alarm_payload in alarm_payload_list:
+                        alarm_type = alarm_payload.get('alarm_type')
+                        if alarm_type == 'metrics_timer':
+                            self.metrics_timer_handle(alarm_payload.get('packet'))
+                        else:
+                            slog.warn('invalid alarm_type:{0}'.format(alarm_type))
+                else:
+                    self.metrics_timer_try_store_cache()
             except Exception as e:
                 slog.warn('catch exception:{0}'.format(e))
         return
 
     def metrics_timer_handle(self, packet):
-        slog.info(packet)
+        # slog.info(packet)
         '''
         {
             "alarm_type": "metrics_timer",
@@ -149,3 +155,9 @@ class MetricsTimerConsumer(object):
         # self.mysql_db.insert_ingore_into_db(db, "tags_table", tags)
 
         return True
+    
+    def metrics_timer_try_store_cache(self):
+        for _db, _cache in self.timer_insert_cache.items():
+            if len(_cache) > 0:
+                self.mysql_db.multi_insert_into_db(_db, "metrics_timer", _cache)
+                self.timer_insert_cache[_db] = []

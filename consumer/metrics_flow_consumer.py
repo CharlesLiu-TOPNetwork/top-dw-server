@@ -56,9 +56,9 @@ class MetricsFlowConsumer(object):
                 self.queue_key_list_, self.consume_step_)  # return dict or None
             for alarm_payload in alarm_payload_list:
                 alarm_type = alarm_payload.get('alarm_type')
-                slog.info(alarm_payload)
+                # slog.info(alarm_payload)
                 if alarm_type == 'metrics_flow':
-                    slog.info(alarm_payload.get('packet'))
+                    # slog.info(alarm_payload.get('packet'))
                     self.metrics_flow_handle(alarm_payload.get('packet'))
                 else:
                     slog.warn('invalid alarm_type:{0}'.format(alarm_type))
@@ -82,7 +82,7 @@ class MetricsFlowConsumer(object):
         return
 
     def metrics_flow_handle(self, packet):
-        slog.info(packet)
+        # slog.info(packet)
         '''
         {
             'alarm_type': 'metrics_flow', 

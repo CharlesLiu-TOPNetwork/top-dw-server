@@ -169,7 +169,7 @@ class RedisQueue(object):
         item = self.myredis.brpop(queue_key_list, timeout=0) # will block here if no data get, return item is tuple
         if not item:
             return None
-        slog.debug('get_queue {0}'.format(item))
+        # slog.debug('get_queue {0}'.format(item))
         return json.loads(item[1])
     
     # get multi-item one time
@@ -179,7 +179,7 @@ class RedisQueue(object):
             item = self.get_queue(queue_key_list)
             if item != None:
                 item_list.append(item)
-        slog.debug('get_queue multi-item size:{0}'.format(len(item_list)))
+        # slog.debug('get_queue multi-item size:{0}'.format(len(item_list)))
         return item_list
 
 

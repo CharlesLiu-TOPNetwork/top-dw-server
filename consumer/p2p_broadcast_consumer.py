@@ -69,9 +69,9 @@ class P2pBroadcastConsumer(object):
                 self.queue_key_list_, self.consume_step_)  # return dict or None
             for alarm_payload in alarm_payload_list:
                 alarm_type = alarm_payload.get('alarm_type')
-                slog.info(alarm_payload)
+                # slog.info(alarm_payload)
                 if alarm_type == 'p2pbroadcast':
-                    slog.info(alarm_payload.get('packet'))
+                    # slog.info(alarm_payload.get('packet'))
                     self.p2pbroadcast_handle(alarm_payload.get('packet'))
                 else:
                     slog.warn('invalid alarm_type:{0}'.format(alarm_type))
@@ -96,7 +96,7 @@ class P2pBroadcastConsumer(object):
         return
 
     def p2pbroadcast_handle(self, packet):
-        slog.info(packet)
+        # slog.info(packet)
         '''
         {
             "alarm_type": "p2pbroadcast",

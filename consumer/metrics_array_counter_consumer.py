@@ -34,7 +34,7 @@ class MetricsArrayCounterConsumer(object):
             "each_count": "",
         }
         
-        self.cache_num = 5
+        self.cache_num = 100
         self.array_counter_insert_cache = {
         }
         self.tag_cache = {
@@ -59,14 +59,17 @@ class MetricsArrayCounterConsumer(object):
             # slog.info("begin consume_alarm_with_notry alarm_queue.size is {0}".format(self.alarm_queue_.qsize(self.queue_key_list_)))
             alarm_payload_list = self.alarm_queue_.get_queue_exp(
                 self.queue_key_list_, self.consume_step_)  # return dict or None
-            for alarm_payload in alarm_payload_list:
-                alarm_type = alarm_payload.get('alarm_type')
-                slog.info(alarm_payload)
-                if alarm_type == 'metrics_array_counter':
-                    slog.info(alarm_payload.get('packet'))
-                    self.metrics_array_counter_handle(alarm_payload.get('packet'))
+            if alarm_payload_list:
+                for alarm_payload in alarm_payload_list:
+                    alarm_type = alarm_payload.get('alarm_type')
+                    # slog.info(alarm_payload)
+                    if alarm_type == 'metrics_array_counter':
+                        # slog.info(alarm_payload.get('packet'))
+                        self.metrics_array_counter_handle(alarm_payload.get('packet'))
+                    else:
+                        slog.warn('invalid alarm_type:{0}'.format(alarm_type))
                 else:
-                    slog.warn('invalid alarm_type:{0}'.format(alarm_type))
+                    self.metrics_array_counter_try_store_cache()
         return
 
     def consume_alarm(self):
@@ -76,19 +79,22 @@ class MetricsArrayCounterConsumer(object):
             try:
                 alarm_payload_list = self.alarm_queue_.get_queue_exp(
                     self.queue_key_list_, self.consume_step_)  # return dict or None
-                for alarm_payload in alarm_payload_list:
-                    alarm_type = alarm_payload.get('alarm_type')
-                    if alarm_type == 'metrics_array_counter':
-                        self.metrics_array_counter_handle(
-                            alarm_payload.get('packet'))
-                    else:
-                        slog.warn('invalid alarm_type:{0}'.format(alarm_type))
+                if alarm_payload_list:
+                    for alarm_payload in alarm_payload_list:
+                        alarm_type = alarm_payload.get('alarm_type')
+                        if alarm_type == 'metrics_array_counter':
+                            self.metrics_array_counter_handle(
+                                alarm_payload.get('packet'))
+                        else:
+                            slog.warn('invalid alarm_type:{0}'.format(alarm_type))
+                else:
+                    self.metrics_array_counter_try_store_cache()
             except Exception as e:
                 slog.warn('catch exception:{0}'.format(e))
         return
 
     def metrics_array_counter_handle(self, packet):
-        slog.info(packet)
+        # slog.info(packet)
         '''
         {
             'alarm_type': 'metrics_array_counter', 
@@ -149,3 +155,9 @@ class MetricsArrayCounterConsumer(object):
 
 
         return True
+    
+    def metrics_array_counter_try_store_cache(self):
+        for _db, _cache in self.array_counter_insert_cache.items():
+            if len(_cache) > 0:
+                self.mysql_db.multi_insert_into_db(_db, "metrics_array_counter", _cache)
+                self.array_counter_insert_cache[_db] = []

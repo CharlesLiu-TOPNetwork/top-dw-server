@@ -71,9 +71,9 @@ class P2PGossipAlarmConsumer(object):
             alarm_payload_list = self.alarm_queue_.get_queue_exp(self.queue_key_list_, self.consume_step_)  # return dict or None
             for alarm_payload in alarm_payload_list:
                 alarm_type = alarm_payload.get('alarm_type')
-                slog.info(alarm_payload)
+                # slog.info(alarm_payload)
                 if alarm_type == 'p2p_gossip':
-                    slog.info(alarm_payload.get('packet'))
+                    # slog.info(alarm_payload.get('packet'))
                     self.p2p_broadcast_alarm(alarm_payload.get('packet'))
                 else:
                     slog.warn('invalid alarm_type:{0}'.format(alarm_type))
@@ -98,7 +98,7 @@ class P2PGossipAlarmConsumer(object):
     # focus on packet_info(drop_rate,hop_num,timing)
     def p2p_broadcast_alarm(self, packet):
         now = int(time.time() * 1000)
-        slog.info(packet)
+        # slog.info(packet)
         '''
         {
             "msg_type": "recv",
