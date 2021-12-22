@@ -231,6 +231,55 @@ class Store(str):
             ) ENGINE = INNODB DEFAULT CHARSET = utf8;'
             self.cursor.execute(create_p2p_dump_msg_info_table_sql)
 
+
+            #p2p_test
+            create_p2p_test_send_record_table_sql = '\
+            CREATE TABLE p2ptest_send_record (\
+                send_timestamp BIGINT ( 20 ) DEFAULT 0,\
+                msg_hash BIGINT ( 20 ) NOT NULL,\
+                src_node_id VARCHAR ( 100 ) DEFAULT "",\
+                dst_node_id VARCHAR ( 100 ) DEFAULT "",\
+                dst_ip VARCHAR ( 40 ) DEFAULT "",\
+                src_ip VARCHAR ( 40 ) DEFAULT "",\
+                hop_num INT ( 10 ) DEFAULT 0,\
+                msg_size INT ( 10 ) NOT NULL,\
+                is_root INT ( 10 ) DEFAULT 0,\
+                is_broadcast INT ( 10 ) DEFAULT 0,\
+                INDEX ( msg_hash ) \
+            ) ENGINE = INNODB DEFAULT CHARSET = utf8;'
+            self.cursor.execute(create_p2p_test_send_record_table_sql)
+
+            create_p2p_test_send_info_table_sql = '\
+            CREATE TABLE p2ptest_send_info (\
+                send_timestamp BIGINT ( 20 ) DEFAULT 0,\
+                msg_hash BIGINT ( 20 ) NOT NULL,\
+                src_node_id VARCHAR ( 100 ) DEFAULT "",\
+                dst_node_id VARCHAR ( 100 ) DEFAULT "",\
+                src_ip VARCHAR ( 40 ) DEFAULT "",\
+                hop_num INT ( 10 ) DEFAULT 0,\
+                msg_size INT ( 10 ) NOT NULL,\
+                is_root INT ( 10 ) DEFAULT 0,\
+                is_broadcast INT ( 10 ) DEFAULT 0,\
+                INDEX ( msg_hash ) \
+            ) ENGINE = INNODB DEFAULT CHARSET = utf8;'
+            self.cursor.execute(create_p2p_test_send_info_table_sql)
+
+            create_p2p_test_recv_info_table_sql = '\
+            CREATE TABLE p2ptest_recv_info (\
+                recv_timestamp BIGINT ( 20 ) DEFAULT 0,\
+                msg_hash BIGINT ( 20 ) NOT NULL,\
+                src_node_id VARCHAR ( 100 ) DEFAULT "",\
+                dst_node_id VARCHAR ( 100 ) DEFAULT "",\
+                dst_ip VARCHAR ( 40 ) DEFAULT "",\
+                hop_num INT ( 10 ) DEFAULT 0,\
+                msg_size INT ( 10 ) DEFAULT 0,\
+                packet_size INT ( 10 ) DEFAULT 0,\
+                is_root INT ( 10 ) DEFAULT 0,\
+                is_broadcast INT ( 10 ) DEFAULT 0,\
+            INDEX ( msg_hash ) \
+            ) ENGINE = INNODB DEFAULT CHARSET = utf8;'
+            self.cursor.execute(create_p2p_test_recv_info_table_sql)
+
             #txpool_state
             create_txpool_state_table_sql = '\
             CREATE TABLE txpool_state (\

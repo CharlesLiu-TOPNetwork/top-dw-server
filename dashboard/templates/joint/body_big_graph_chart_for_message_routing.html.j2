@@ -1,0 +1,74 @@
+<div id = "infos">
+<ul>
+{% for name,value in msg_info.items() -%}
+<li>{{name}} : {{value}}</li>
+{% endfor %}
+</ul>
+</div>
+<div class="echart_big_wide_div" id="main"></div>
+<script>
+
+    var chartDom = document.getElementById('main');
+    var myChart = echarts.init(chartDom);
+    var option;
+
+    option = {
+        title: {
+            text: "P2P message DEMO",
+            subtext: "Default layout",
+            top: "bottom",
+            left: "right"
+        },
+        tooltip: {},
+        legend: [{
+            // data: ["第0跳", "第1跳", "第2跳", "第3跳", "第4跳", "第5跳", "第6跳", "第7跳", "第8跳"]
+            // data: ["第0跳", "第1跳", "第2跳", "第3跳", "第4跳", "未收到"]
+            data:[
+                {% for _category in categories_list -%}
+                    "{{_category}}",
+                {%- endfor %}
+            ]
+        }],
+        animationDuration: 1500,
+        animationEasingUpdate: "quinticInOut",
+        series: [{
+            name: "Nodes",
+            type: "graph",
+            layout: "circular",
+            label:{
+                // show: true
+                show: false
+            },
+            edgeSymbol: ['none', 'arrow'],
+            data: [
+            {% for id,nodes in nodes_info.items() -%}
+            {
+                id: {{id}},
+                name: "{{nodes['ip']}}",
+                symbolSize: 25 -  {{nodes['recvd_hop_num']}},
+                value : {{nodes['recv_cnt']}},
+                category: {{nodes['recvd_hop_num']}},
+            },
+            {%- endfor %}
+            ],
+            links: [
+            {% for _links in links_info -%}
+            {
+                id: {{_links['id']}},
+                source: "{{_links['source']}}",
+                target: "{{_links['target']}}",
+            },
+            {%- endfor %}
+            ],
+            categories: [
+            {% for _category in categories_list -%}
+            {
+                name: "{{_category}}"
+            },
+            {%- endfor %}
+            ]
+        }]
+    }
+    option && myChart.setOption(option);
+
+</script>

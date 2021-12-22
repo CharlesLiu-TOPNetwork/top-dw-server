@@ -1,0 +1,38 @@
+<script>
+$("#query_msg_hash").click(function () {
+    database = $(".database_selector").val();
+    msg_hash = $("#hash_input").val();
+    query_path = "/query_message_routing/?database=" + database +  "&msg_hash=" + msg_hash
+    console.log(query_path)
+    htmlobj = $.ajax({
+        url: query_path,
+        async: true,
+        beforeSend: function () {
+            $("#Result_DIV").animate({ opacity: .4 }, 500, function () { })
+            $("#loading").show();
+            console.log("before send");
+        },
+        complete: function () {
+            $("#Result_DIV").animate({ opacity: 1 }, 1000, function () { })
+            $("#loading").hide();
+            $("#Result_DIV").html(htmlobj.responseText);
+            console.log("after send");
+        },
+
+    });
+});
+</script>
+
+<div>
+<select class="database_selector">
+    <option>choose database</option>
+    {%- for info in database_list -%}
+    <option value="{{info.name}}">{{info.time}}:{{info.name}}</option>
+    {%- endfor -%}
+</select>
+Message Hash: <input type="text" id = "hash_input">
+<button id="query_msg_hash" class="query_button" type="button">query_message</button>
+</div>
+
+<div id="Result_DIV">
+</div>

@@ -90,6 +90,18 @@ class RedisQueue(object):
         self.myredis.sadd(self.all_queue_keys,qkey_perf)
         self.all_queue_keys_set.add(qkey_perf)
 
+        
+        # p2ptest
+        qkey_perf = '{0}:p2ptest_sendrecord'.format(self.queue_key_base)
+        self.myredis.sadd(self.all_queue_keys,qkey_perf)
+        self.all_queue_keys_set.add(qkey_perf)
+        qkey_perf = '{0}:p2ptest_send_info'.format(self.queue_key_base)
+        self.myredis.sadd(self.all_queue_keys,qkey_perf)
+        self.all_queue_keys_set.add(qkey_perf)
+        qkey_perf = '{0}:p2ptest_recv_info'.format(self.queue_key_base)
+        self.myredis.sadd(self.all_queue_keys,qkey_perf)
+        self.all_queue_keys_set.add(qkey_perf)
+
 
         return
     

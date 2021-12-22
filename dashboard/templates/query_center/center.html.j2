@@ -263,7 +263,7 @@
             });
             $("#tmp_test").click(function(){
                 htmlobj = $.ajax({
-                    url: "/tmp_test_page/",
+                    url: "/query_message",
                     async: true,
                     beforeSend: function () {
                         $("#main_page").animate({ opacity: .4 }, 500, function () { })
@@ -294,8 +294,8 @@
         <button id="tools_1_xsync" style="width:12%">xsync</button>
         <button id="tools_1_store_cache_hit" style="width:12%">store_cache_hit</button>
         <button id="tools_1_txpool" style="width:12%">txpool</button>
-        <button id="db_tools" style="width:10%">DB</button>
-        {# <button id="tmp_test" style="width:3%">test</button> #}
+        <button id="db_tools" style="width:7%">DB</button>
+        <button id="tmp_test" style="width:3%">test</button>
     </div>
 
     <div id="loading" style="width:66px;height:66px;position:absolute;top:50%;left:50%;">

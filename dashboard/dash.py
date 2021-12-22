@@ -1,7 +1,6 @@
 #!/usr/bin/env python
 #-*- coding:utf8 -*-
 
-
 import os,sys
 project_path = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.dirname(project_path))
@@ -812,6 +811,199 @@ def query_ip_category_tag_metrics_counter():
 
     return res
 
+
+# ![page] return message routing page for lookup
+@app.route('/query_message',methods=['GET'])
+@app.route('/query_message/',methods=['GET'])
+def query_message():
+    return render_template('query_center/query_message_page.html.j2', database_list = database_time())
+
+
+# ![temp api] query a message hash info
+@app.route('/query_message_hash_info',methods=['GET'])
+@app.route('/query_message_hash_info/',methods=['GET'])
+def query_message_hash_info():
+    database = request.args.get('database') or None
+    msg_hash = request.args.get('msg_hash') or None
+    rrs_flag = request.args.get('is_rrs') or None
+    if rrs_flag:
+        return jsonify(rrs_message_info(database,msg_hash))
+    else:
+        return jsonify(message_info(database,msg_hash))
+
+
+# ![temp api] query multi messages hash info
+@app.route('/query_multi_message_hash_info',methods=['GET'])
+@app.route('/query_multi_message_hash_info/',methods=['GET'])
+def query_multi_message_hash_info():
+    database = request.args.get('database') or None
+    msg_hash = request.args.get('msg_hash') or None
+    rrs_flag = request.args.get('is_rrs') or None
+    msg_hash_list = [x.strip() for x in msg_hash.split(',')]
+    print(msg_hash_list)
+    res = []
+    for _hash in msg_hash_list:
+        if rrs_flag:
+            tmp_res = rrs_message_info(database,_hash)
+            tmp_res['msg_hash'] = _hash
+            # res[_hash] = rrs_message_info(database,_hash)
+        else:
+            tmp_res = rrs_message_info(database,_hash)
+            tmp_res['msg_hash'] = _hash
+            # res[_hash] = message_info(database,_hash)
+        res.append(tmp_res)
+
+    print(res)
+    return jsonify(res)
+
+
+# ![inner api] query a message hash info
+def rrs_message_info(db,msg_hash):
+    query_sql = 'SELECT count( public_ips ) - 1 AS should_recvd_num FROM `ips_table`;'
+    should_recvd_num_item = myquery.query_database(db,query_sql)
+
+    query_sql = 'SELECT count( dst_ip ) AS actually_recvd_num FROM `p2ptest_recv_info` WHERE msg_hash = "{0}";'.format(msg_hash)
+    actually_recvd_num_item = myquery.query_database(db,query_sql)
+
+    query_sql = 'SELECT src_node_id, count(*) as send_count FROM `p2ptest_send_record` WHERE msg_hash = "{0}" GROUP BY src_node_id ORDER BY src_node_id;'.format(msg_hash)
+    send_record_item = myquery.query_database(db,query_sql)
+    # return send_record_item
+    # print(send_record_item)
+
+    query_sql = 'SELECT avg( hop_num ) AS avg_hop_num FROM `p2ptest_recv_info` WHERE msg_hash = "{0}";'.format(msg_hash)
+    avg_hop_num_item = myquery.query_database(db,query_sql)
+
+    query_sql = 'SELECT avg( recv_timestamp ) - ( SELECT send_timestamp FROM `p2ptest_send_info` WHERE msg_hash = "{0}" ) AS avg_recv_delay FROM `p2ptest_recv_info` WHERE msg_hash = "{0}";'.format(msg_hash)
+    avg_recv_delay_item = myquery.query_database(db,query_sql)
+
+    infos = {
+        "recv_num" : str(actually_recvd_num_item[0]['actually_recvd_num'])+' / ' + str(should_recvd_num_item[0]['should_recvd_num']) ,
+        "send_hash_count": send_record_item[0]['send_count'],
+        "send_msg_count": sum([m['send_count'] for m in send_record_item if m['src_node_id']]),
+        "avg_hop_num": str(avg_hop_num_item[0]['avg_hop_num']),
+        "avg_recv_delay": str(avg_recv_delay_item[0]['avg_recv_delay']),
+    }
+
+    return infos
+
+# ![inner api] query a message hash info
+def message_info(db,msg_hash):
+    query_sql = 'SELECT count( public_ips ) - 1 AS should_recvd_num FROM `ips_table`;'
+    should_recvd_num_item = myquery.query_database(db,query_sql)
+
+    query_sql = 'SELECT count( dst_ip ) AS actually_recvd_num FROM `p2ptest_recv_info` WHERE msg_hash = "{0}";'.format(msg_hash)
+    actually_recvd_num_item = myquery.query_database(db,query_sql)
+
+    query_sql = 'SELECT count(*) AS total_send_count FROM `p2ptest_send_record` WHERE msg_hash = "{0}";'.format(msg_hash)
+    total_send_count_item = myquery.query_database(db,query_sql)
+
+    query_sql = 'SELECT avg( hop_num ) AS avg_hop_num FROM `p2ptest_recv_info` WHERE msg_hash = "{0}";'.format(msg_hash)
+    avg_hop_num_item = myquery.query_database(db,query_sql)
+
+    query_sql = 'SELECT avg( recv_timestamp ) - ( SELECT send_timestamp FROM `p2ptest_send_info` WHERE msg_hash = "{0}" ) AS avg_recv_delay FROM `p2ptest_recv_info` WHERE msg_hash = "{0}";'.format(msg_hash)
+    avg_recv_delay_item = myquery.query_database(db,query_sql)
+
+    infos = {
+        "recv_num" : str(actually_recvd_num_item[0]['actually_recvd_num'])+' / ' + str(should_recvd_num_item[0]['should_recvd_num']) ,
+        "total_send_count": total_send_count_item[0]['total_send_count'],
+        "avg_hop_num": str(avg_hop_num_item[0]['avg_hop_num']),
+        "avg_recv_delay": str(avg_recv_delay_item[0]['avg_recv_delay']),
+    }
+
+    return infos
+    
+
+
+# ![api] return a message routing ( a big div )
+@app.route('/query_message_routing',methods=['GET'])
+@app.route('/query_message_routing/',methods=['GET'])
+def query_message_routing():
+    database = request.args.get('database') or 'p2ptest_local'
+    # ip = request.args.get('public_ip') or None
+    # category = request.args.get('category') or None
+    # tag = request.args.get('tag') or None
+    msg_hash = request.args.get('msg_hash') or None
+
+    msg_info = message_info(database, msg_hash)
+
+    query_sql = 'SELECT src_ip FROM `p2ptest_send_info` WHERE msg_hash = "{0}";'.format(msg_hash)
+    src_item = myquery.query_database(database,query_sql)
+
+    if not src_item:
+        return "missing this message {0}".format(msg_hash)
+
+    category_lists = ['第0跳']
+    nodes_info = {}
+    ip_index_dict = {}
+
+    # send node hop num 0 , 
+    nodes = {
+        "ip":src_item[0]['src_ip'],
+        "recvd_hop_num":0,
+        "recv_cnt":1,
+    }
+    nodes_info[str(0)] = nodes
+    ip_index_dict[src_item[0]['src_ip']] = 0
+
+
+    query_sql = 'SELECT dst_ip,hop_num FROM `p2ptest_recv_info` WHERE msg_hash = "{0}" order by hop_num;'.format(msg_hash)
+    hop_num_item = myquery.query_database(database,query_sql)
+
+
+    node_index = 1
+
+    for item in hop_num_item:
+        nodes = {
+            "ip" : item['dst_ip'],
+            "recvd_hop_num" : item['hop_num'],
+            "recv_cnt" : 1,
+        }
+        ip_index_dict[item['dst_ip']] = node_index
+        if '第' + str(item['hop_num']) + '跳' not in category_lists:
+            category_lists.append('第' + str(item['hop_num']) + '跳')
+        nodes_info[str(node_index)] = nodes
+        node_index = node_index + 1
+    
+
+    query_sql = 'SELECT public_ips FROM `ips_table`;'
+    all_ips = myquery.query_database(database,query_sql)
+    print(all_ips)
+
+    exist_not_recv_flag = False
+
+    for _ip in all_ips:
+        if _ip['public_ips'] not in ip_index_dict:
+            ip_index_dict[_ip['public_ips']] = node_index
+            nodes = {
+                "ip": _ip['public_ips'],
+                "recvd_hop_num": len(category_lists),
+                "recv_cnt":0,
+            }
+            nodes_info[str(node_index)] = nodes
+            node_index = node_index +1
+            exist_not_recv_flag = True
+
+    print(nodes_info)
+
+    if exist_not_recv_flag:
+        category_lists.append('未收到')
+
+    links_info = []
+    print(ip_index_dict)
+
+    query_sql = 'SELECT src_ip,dst_ip FROM `p2ptest_send_record` WHERE msg_hash = "{0}";'.format(msg_hash)
+    links_item = myquery.query_database(database,query_sql)
+    link_index = 0
+    for item in links_item:
+        links = {
+            'id' : str(link_index),
+            'source' : ip_index_dict[item['src_ip']],
+            'target' : ip_index_dict[item['dst_ip']],
+        }
+        link_index = link_index + 1
+        links_info.append(links)
+
+    return render_template('joint/body_big_graph_chart_for_message_routing.html.j2',msg_info = msg_info,nodes_info = nodes_info,links_info = links_info,categories_list = category_lists); 
 
 # ![help_tools] convert a [list] into a [str] which skip the None data
 def format_data_list_to_str(data_list: dict):
