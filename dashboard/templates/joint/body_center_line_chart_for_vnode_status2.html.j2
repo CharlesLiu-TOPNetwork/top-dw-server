@@ -66,7 +66,7 @@
             ]
         },
         yAxis: {
-            min:-4,
+            min:-5,
             max:6,
             name: "角色",
             type: 'value',
@@ -76,6 +76,7 @@
                 formatter: function(value,index){
                     var res = "";
                     switch(value){
+                        case -5: res = "fullnode";break;
                         case -4: res = "edge";break;
                         case -3: res = "archive";break;
                         case -2: res = "zec";break;

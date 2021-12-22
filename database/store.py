@@ -18,7 +18,7 @@ class Store(str):
             "metrics_timer": 'send_timestamp,public_ip,category,tag,count,max_flow,min_flow,sum_flow,avg_flow,tps_flow,tps',
             "ips_table":'public_ips',
             "tags_table":'category,tag,type',
-            "vnode_status":'timestamp,public_ip,rec,zec,auditor,validator,archive,edge',
+            "vnode_status":'timestamp,public_ip,rec,zec,auditor,validator,archive,edge,fullnode',
         }
         self.db = pymysql.connect(**{
             'host': cconfig.DEFAULT_MYSQL_CONFIG['DB_HOST'],
@@ -149,6 +149,7 @@ class Store(str):
                 validator INT ( 10 ) DEFAULT 0 NOT NULL,\
                 archive INT ( 10 ) DEFAULT 0 NOT NULL,\
                 edge INT ( 10 ) DEFAULT 0 NOT NULL,\
+                fullnode INT ( 10 ) DEFAULT 0 NOT NULL,\
             INDEX ( timestamp, public_ip ) \
             ) ENGINE = INNODB DEFAULT CHARSET = utf8;'
             self.cursor.execute(create_vnode_status_table_sql)

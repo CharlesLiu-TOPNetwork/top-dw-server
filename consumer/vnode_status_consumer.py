@@ -32,7 +32,8 @@ class VnodeStatusConsumer(object):
             "auditor":0,
             "validator":0,
             "archive":0,
-            "edge":0
+            "edge":0,
+            # "fullnode":0,
         }
 
         return
@@ -107,6 +108,7 @@ class VnodeStatusConsumer(object):
         item['validator'] = packet.get('validator')
         item['archive'] = packet.get('archive')
         item['edge'] = packet.get('edge')
+        # item['fullnode'] = packet.get('fullnode')
         
         self.mysql_db.insert_into_db(db, "vnode_status", item)
 

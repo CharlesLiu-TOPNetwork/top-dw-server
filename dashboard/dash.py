@@ -1410,6 +1410,7 @@ def query_ip_vnode_status():
         'validator': [],
         'archive': [],
         'edge': [],
+        'fullnode': [],
     }
     new_status = False
     for item in query_items:
@@ -1423,6 +1424,7 @@ def query_ip_vnode_status():
         res_item['validator'].append(item['validator'])
         res_item['archive'].append(item['archive'])
         res_item['edge'].append(item['edge'])
+        res_item['fullnode'].append(0) # todo
 
     if new_status:
         res = render_template('joint/body_center_line_chart_for_vnode_status2.html.j2',
