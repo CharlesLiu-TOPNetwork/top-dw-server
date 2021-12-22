@@ -132,13 +132,13 @@ def send_alarm_to_dingding(type: str, content):
     except Exception as e:
         print('catch exception:{0}'.format(e))
     
-    if type == 'info':    
-        try:
-            r = requests.post(webhook_PUB, headers=header,
-                            data=send_data, timeout=10)
-            print(r.text)
-        except Exception as e:
-            print('catch exception:{0}'.format(e))
+    # if type == 'info':    
+    #     try:
+    #         r = requests.post(webhook_PUB, headers=header,
+    #                         data=send_data, timeout=10)
+    #         print(r.text)
+    #     except Exception as e:
+    #         print('catch exception:{0}'.format(e))
         
 
 
@@ -669,11 +669,11 @@ def run():
 
         database_list = database_time()
         db_c.check_database(database_list)
-        db_c.check_metrics_alarm(database_list)
+        # db_c.check_metrics_alarm(database_list)
         if now_time_utc_hour() == 1:
             db_c.check_yesterday_db(database_list)
         db_c.database_setting_update(database_detailed_info())
-        # db_c.database_clean(database_list)
+        db_c.database_clean(database_list)
         db_c.dump_to_file()
         time.sleep(check_interval)
 
