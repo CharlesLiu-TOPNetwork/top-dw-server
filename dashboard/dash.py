@@ -1592,7 +1592,7 @@ def query_xsync_interval():
 def query_ip_vnode_status():    
     database = request.args.get('database') or None
     public_ip = request.args.get('public_ip') or None
-    query_sql = 'SELECT timestamp,rec,zec,auditor,validator,archive,edge from vnode_status where public_ip = "'+ public_ip+'" ORDER BY timestamp;'
+    query_sql = 'SELECT timestamp,rec,zec,auditor,validator,archive,edge,fullnode from vnode_status where public_ip = "'+ public_ip+'" ORDER BY timestamp;'
     query_items = myquery.query_database(database,query_sql)
     list_x = []
     res_item = {
@@ -1616,7 +1616,7 @@ def query_ip_vnode_status():
         res_item['validator'].append(item['validator'])
         res_item['archive'].append(item['archive'])
         res_item['edge'].append(item['edge'])
-        res_item['fullnode'].append(0) # todo
+        res_item['fullnode'].append(item['fullnode'])
 
     if new_status:
         res = render_template('joint/body_center_line_chart_for_vnode_status2.html.j2',
