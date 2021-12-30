@@ -825,32 +825,37 @@ def query_message():
 def query_message_hash_info():
     database = request.args.get('database') or None
     msg_hash = request.args.get('msg_hash') or None
-    rrs_flag = request.args.get('is_rrs') or None
-    if rrs_flag:
-        return jsonify(rrs_message_info(database,msg_hash))
-    else:
-        return jsonify(message_info(database,msg_hash))
+    # if rrs_flag:
+    #     return jsonify(rrs_message_info(database,msg_hash))
+    # else:
+    return jsonify(message_info(database,msg_hash))
 
 
-# ![temp api] query multi messages hash info
-@app.route('/query_multi_message_hash_info',methods=['GET'])
-@app.route('/query_multi_message_hash_info/',methods=['GET'])
+# ![raw api] query message hash list
+@app.route('/dw-api/query_message_hash_list',methods=['GET'])
+@app.route('/dw-api/query_message_hash_list/',methods=['GET'])
+def query_message_hash_list():
+    database = request.args.get('env') or None
+    res = []
+    if database:
+        query_sql = 'SELECT msg_hash FROM p2ptest_send_info ORDER BY RAND() LIMIT 50;'
+        res_item = myquery.query_database(database,query_sql)
+        for _item in res_item:
+            res.append(_item['msg_hash'])
+
+    return jsonify(res)
+
+# ![raw api] query multi messages hash info
+@app.route('/dw-api/query_multi_message_hash_info',methods=['GET'])
+@app.route('/dw-api/query_multi_message_hash_info/',methods=['GET'])
 def query_multi_message_hash_info():
-    database = request.args.get('database') or None
+    database = request.args.get('env') or None
     msg_hash = request.args.get('msg_hash') or None
-    rrs_flag = request.args.get('is_rrs') or None
     msg_hash_list = [x.strip() for x in msg_hash.split(',')]
     print(msg_hash_list)
     res = []
     for _hash in msg_hash_list:
-        if rrs_flag:
-            tmp_res = rrs_message_info(database,_hash)
-            tmp_res['msg_hash'] = _hash
-            # res[_hash] = rrs_message_info(database,_hash)
-        else:
-            tmp_res = rrs_message_info(database,_hash)
-            tmp_res['msg_hash'] = _hash
-            # res[_hash] = message_info(database,_hash)
+        tmp_res = message_info(database,_hash)
         res.append(tmp_res)
 
     print(res)
@@ -858,8 +863,8 @@ def query_multi_message_hash_info():
 
 
 # ![inner api] query a message hash info
-def rrs_message_info(db,msg_hash):
-    query_sql = 'SELECT count( public_ips ) - 1 AS should_recvd_num FROM `ips_table`;'
+def message_info(db,msg_hash):
+    query_sql = 'SELECT count( public_ips ) AS should_recvd_num FROM `ips_table`;'
     should_recvd_num_item = myquery.query_database(db,query_sql)
 
     query_sql = 'SELECT count( dst_ip ) AS actually_recvd_num FROM `p2ptest_recv_info` WHERE msg_hash = "{0}";'.format(msg_hash)
@@ -873,12 +878,16 @@ def rrs_message_info(db,msg_hash):
     query_sql = 'SELECT avg( hop_num ) AS avg_hop_num FROM `p2ptest_recv_info` WHERE msg_hash = "{0}";'.format(msg_hash)
     avg_hop_num_item = myquery.query_database(db,query_sql)
 
-    query_sql = 'SELECT avg( recv_timestamp ) - ( SELECT send_timestamp FROM `p2ptest_send_info` WHERE msg_hash = "{0}" ) AS avg_recv_delay FROM `p2ptest_recv_info` WHERE msg_hash = "{0}";'.format(msg_hash)
+    query_sql = 'SELECT @st := ( SELECT send_timestamp FROM `p2ptest_send_info` WHERE msg_hash = "{0}" ) AS send_timestamp, avg( recv_timestamp ) - @st AS avg_recv_delay FROM `p2ptest_recv_info` WHERE msg_hash = "{0}";'.format(msg_hash)
+
+    # query_sql = 'SELECT avg( recv_timestamp ) - ( SELECT send_timestamp FROM `p2ptest_send_info` WHERE msg_hash = "{0}" ) AS avg_recv_delay FROM `p2ptest_recv_info` WHERE msg_hash = "{0}";'.format(msg_hash)
     avg_recv_delay_item = myquery.query_database(db,query_sql)
 
     infos = {
+        "msg_hash" : str(msg_hash),
+        "send_timestamp" : str(avg_recv_delay_item[0]['send_timestamp']/1000),
         "recv_num" : str(actually_recvd_num_item[0]['actually_recvd_num'])+' / ' + str(should_recvd_num_item[0]['should_recvd_num']) ,
-        "send_hash_count": send_record_item[0]['send_count'],
+        "send_hash_count": sum([m['send_count'] for m in send_record_item if not m['src_node_id']]),
         "send_msg_count": sum([m['send_count'] for m in send_record_item if m['src_node_id']]),
         "avg_hop_num": str(avg_hop_num_item[0]['avg_hop_num']),
         "avg_recv_delay": str(avg_recv_delay_item[0]['avg_recv_delay']),
@@ -886,6 +895,7 @@ def rrs_message_info(db,msg_hash):
 
     return infos
 
+'''
 # ![inner api] query a message hash info
 def message_info(db,msg_hash):
     query_sql = 'SELECT count( public_ips ) - 1 AS should_recvd_num FROM `ips_table`;'
@@ -904,14 +914,33 @@ def message_info(db,msg_hash):
     avg_recv_delay_item = myquery.query_database(db,query_sql)
 
     infos = {
-        "recv_num" : str(actually_recvd_num_item[0]['actually_recvd_num'])+' / ' + str(should_recvd_num_item[0]['should_recvd_num']) ,
+        "msg_hash" : str(msg_hash),
+        "recv_num" : str(actually_recvd_num_item[0]['actually_recvd_num'])+' / ' + str(should_recvd_num_item[0]['should_recvd_num']),
         "total_send_count": total_send_count_item[0]['total_send_count'],
         "avg_hop_num": str(avg_hop_num_item[0]['avg_hop_num']),
         "avg_recv_delay": str(avg_recv_delay_item[0]['avg_recv_delay']),
     }
 
     return infos
+'''
     
+# ![api] return a random message routing ( a big div)
+@app.route('/query_random_message_routing',methods=['GET'])
+@app.route('/query_random_message_routing/',methods=['GET'])
+def query_random_message_routing():
+    database = request.args.get('database') or 'p2ptest_local'
+
+    query_random_msg_hash = 'SELECT msg_hash FROM p2ptest_send_info ORDER BY RAND() LIMIT 1;'
+
+    src_item = myquery.query_database(database,query_random_msg_hash)
+
+    if not src_item:
+        return "do not have any message"
+    
+    msg_hash = src_item[0]['msg_hash']
+
+    # return str(msg_hash)
+    return query_message_routing_div(database,msg_hash)
 
 
 # ![api] return a message routing ( a big div )
@@ -924,6 +953,10 @@ def query_message_routing():
     # tag = request.args.get('tag') or None
     msg_hash = request.args.get('msg_hash') or None
 
+    return query_message_routing_div(database,msg_hash)
+
+# ![inner api] return a message rouitng ( a big div)
+def query_message_routing_div(database,msg_hash):
     msg_info = message_info(database, msg_hash)
 
     query_sql = 'SELECT src_ip FROM `p2ptest_send_info` WHERE msg_hash = "{0}";'.format(msg_hash)

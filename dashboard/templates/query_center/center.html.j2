@@ -242,6 +242,25 @@
 
                 });
             });
+            $("#message_routing").click(function(){
+                htmlobj = $.ajax({
+                    url: "/query_message",
+                    async: true,
+                    beforeSend: function () {
+                        $("#main_page").animate({ opacity: .4 }, 500, function () { })
+                        $("#loading").show();
+                        console.log("before send");
+                    },
+                    complete: function () {
+                        $("#main_page").animate({ opacity: 1 }, 500, function () { })
+                        $("#loading").hide();
+                        $("#main_page").html(htmlobj.responseText);
+                        // console.log(htmlobj.responseText)
+                        console.log("after send");
+                    },
+
+                });
+            });
             $("#db_tools").click(function(){
                 htmlobj = $.ajax({
                     url: "/db_manager/",
@@ -261,9 +280,9 @@
 
                 });
             });
-            $("#tmp_test").click(function(){
+            $("#raw_api").click(function(){
                 htmlobj = $.ajax({
-                    url: "/query_message",
+                    url: "/dw-api/help/",
                     async: true,
                     beforeSend: function () {
                         $("#main_page").animate({ opacity: .4 }, 500, function () { })
@@ -287,15 +306,16 @@
 <body>
 
     <div class="btn-group" style="width:102%">
-        <button id="tools_0_one_metrics" style="width:18%">one_metrics</button>
-        <button id="tools_0_ip_metrics" style="width:18%">ip_metrics</button>
+        <button id="tools_0_one_metrics" style="width:17%">one_metrics</button>
+        <button id="tools_0_ip_metrics" style="width:17%">ip_metrics</button>
         <!-- background-color:#9a0000; -->
-        <button id="tools_0_metrics_alarm" style="width:18%;">metrics_alarm</button>
-        <button id="tools_1_xsync" style="width:12%">xsync</button>
-        <button id="tools_1_store_cache_hit" style="width:12%">store_cache_hit</button>
-        <button id="tools_1_txpool" style="width:12%">txpool</button>
-        <button id="db_tools" style="width:7%">DB</button>
-        <button id="tmp_test" style="width:3%">test</button>
+        <button id="tools_0_metrics_alarm" style="width:17%;">metrics_alarm</button>
+        <button id="tools_1_xsync" style="width:10%">xsync</button>
+        <button id="tools_1_store_cache_hit" style="width:10%">store_cache_hit</button>
+        <button id="tools_1_txpool" style="width:10%">txpool</button>
+        <button id="message_routing" style="width:10%">message_routing</button>
+        <button id="db_tools" style="width:5%">DB</button>
+        <button id="raw_api" style="width:4%">API</button>
     </div>
 
     <div id="loading" style="width:66px;height:66px;position:absolute;top:50%;left:50%;">
