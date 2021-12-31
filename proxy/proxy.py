@@ -70,6 +70,15 @@ def config_update():
         return jsonify(ret)
     return
 
+# get public ip
+@app.route('/api/ip/',methods=['GET'])
+@app.route('/api/ip',methods=['GET'])
+def get_public_ip():
+    alarm_ip = request.headers.get('X-Forwarded-For') or request.headers.get('X-Real-IP') or request.remote_addr
+    slog.info("/api/ip clientip:{0} method:{1}".format(alarm_ip, request.method))
+    ret = {'status': 0, 'ip': alarm_ip}
+    return jsonify(ret)
+
 
 #告警上报(发包收包情况收集)
 @app.route('/api/alarm/', methods=['POST'])
@@ -92,7 +101,7 @@ def alarm_report():
         return jsonify(ret)
 
     alarm_ip = request.headers.get('X-Forwarded-For') or request.headers.get('X-Real-IP') or request.remote_addr
-    slog.info("recv alarm from ip:{0} size:{1}".format(alarm_ip, len(payload.get('data'))))
+    # slog.info("recv alarm from ip:{0} size:{1}".format(alarm_ip, len(payload.get('data'))))
     # mq.handle_alarm(payload.get('data'))
     mq.handle_alarm_env_ip(payload.get('data'), payload.get('env'), payload.get('public_ip'))
     ret = {'status': 0, 'error': status_ret.get(0)}
