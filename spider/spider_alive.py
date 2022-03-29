@@ -33,7 +33,7 @@ my_ip = get_local_ip()
 
 check_interval = 60
 
-spider_process_count = 1
+spider_process_count = 2
 
 
 project_path = '/home/charles/project/top-dw-server'
