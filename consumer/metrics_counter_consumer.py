@@ -135,7 +135,7 @@ class MetricsCounterConsumer(object):
             self.ip_cache[db].append(packet.get('public_ip'))
             self.mysql_db.insert_ingore_into_db(db,"ips_table",{'public_ips':packet.get('public_ip')})
 
-        if len(self.counter_insert_cache[db]) > self.cache_num:
+        if len(self.counter_insert_cache[db]) > self.cache_num or db.startswith('relay'):
             self.mysql_db.multi_insert_into_db(db,"metrics_counter",self.counter_insert_cache[db])
             self.counter_insert_cache[db] = []
 

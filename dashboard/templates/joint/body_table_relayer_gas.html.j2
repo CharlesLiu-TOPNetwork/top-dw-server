@@ -1,20 +1,20 @@
 <script type="text/javascript">
     var start_id = {{max_seq}};
     var query_cnt = 0;
-
+    
     getData();
 
     function getData() {
         query_cnt++;
         start_id = Math.max(start_id - 10, 0);
         resp = $.ajax({
-            url: "/query_alarm_data/?database={{database}}&public_ip={{public_ip}}"+"&category={{category}}"+"&begin_seq_id=" + start_id,
+            url: "/query_relayer_gas_data/?database={{database}}&public_ip={{public_ip}}"+"&begin_seq_id=" + start_id,
             async: true,
             beforeSend: function () {
-                console.log("before send query_alarm_data");
+                console.log("before send query_relayer_gas_data");
             },
             complete: function () {
-                console.log("after  send query_alarm_data");
+                console.log("after  send query_relayer_gas_data");
                 insertTable(JSON.parse(resp.responseText))
             }
         });
@@ -29,18 +29,19 @@
             id = json[i]['seq_id'];
             public_ip = json[i]['public_ip'];
             send_timestamp = json[i]['send_timestamp'];
-            category = json[i]['category'];
-            tag = json[i]['tag'];
+            count = json[i]['count'];
+            amount = json[i]['amount'];
+            detail = json[i]['detail'];
             // parse json into multi-line readable format
-            content = json[i]['kv_content'].replace(/,/g, ",<br>");
+            // content = json[i]['kv_content'].replace(/,/g, ",<br>");
 
             html += '<tr>';
             html += '<td>' + id + '</td>';
             html += '<td>' + public_ip + '</td>';
             html += '<td>' + send_timestamp + '</td>';
-            html += '<td>' + category + '</td>';
-            html += '<td>' + tag + '</td>';
-            html += '<td>' + content + '</td>';
+            html += '<td>' + count + '</td>';
+            html += '<td>' + amount + '</td>';
+            html += '<td>' + detail + '</td>';
             html += '</tr>';
 
             $table.append(html);
@@ -58,21 +59,14 @@
             <th>#id</th>
             <th>public_ip</th>
             <th>timestamp</th>
-            <th>category</th>
-            <th>tag</th>
-            <th>content</th>
+            <th>count</th>
+            <th>amount</th>
+            <th>detail</th>
         </tr>
     </thead>
 
     <tbody class="table_content">
-        <!-- <tr>
-                <td>1</td>
-                <td>Honda</td>
-                <td>Accord</td>
-                <td>2009111111111111111111111111111111</td>
-                <td>2009111111111111111111111111111111</td>
-                <td>2009111111111111111111111111111111</td>
-            </tr> -->
+    
     </tbody>
 </table>
 

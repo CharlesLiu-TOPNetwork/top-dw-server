@@ -32,6 +32,7 @@ from consumer import metrics_array_counter_consumer
 from consumer import p2ptest_sendrecord_consumer
 from consumer import p2ptest_send_consumer
 from consumer import p2ptest_recv_consumer
+from consumer import relayer_gas_consumer
 
 mq = my_queue.RedisQueue(host= sconfig.REDIS_HOST, port=sconfig.REDIS_PORT, password=sconfig.REDIS_PASS)
 
@@ -55,6 +56,7 @@ def run(alarm_type, alarm_env = 'test'):
             "p2ptest_sendrecord":[],
             "p2ptest_send_info":[],
             "p2ptest_recv_info":[],
+            "relayer_gas":[],
             }
 
     for qkey in all_queue_key:
@@ -90,6 +92,9 @@ def run(alarm_type, alarm_env = 'test'):
             qkey_map['p2ptest_send_info'].append(qkey)
         if qkey.find('p2ptest_recv_info')!=-1:
             qkey_map['p2ptest_recv_info'].append(qkey)
+        if qkey.find('relayer_gas')!=-1:
+            qkey_map['relayer_gas'].append(qkey)
+        
 
     slog.warn('qkey_map:{0}'.format(json.dumps(qkey_map)))
 
@@ -163,6 +168,11 @@ def run(alarm_type, alarm_env = 'test'):
         for qkey in qkey_map.get('p2ptest_recv_info'):
             consumer = p2ptest_recv_consumer.P2PTestRecvConsumer(q=mq,queue_key_list=[qkey],alarm_env=alarm_env)
             consumer_list.append(consumer)
+        
+        for qkey in qkey_map.get('relayer_gas'):
+            consumer = relayer_gas_consumer.RelayerGasConsumer(q=mq,queue_key_list=[qkey],alarm_env=alarm_env)
+            consumer_list.append(consumer)
+        
 
     if not consumer_list:
         slog.warn("no consumer created")

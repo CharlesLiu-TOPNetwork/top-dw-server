@@ -102,6 +102,10 @@ class RedisQueue(object):
         self.myredis.sadd(self.all_queue_keys,qkey_perf)
         self.all_queue_keys_set.add(qkey_perf)
 
+        # relayer
+        qkey_perf = '{0}:relayer_gas'.format(self.queue_key_base)
+        self.myredis.sadd(self.all_queue_keys,qkey_perf)
+        self.all_queue_keys_set.add(qkey_perf)
 
         return
     

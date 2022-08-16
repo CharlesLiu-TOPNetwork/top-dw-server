@@ -328,6 +328,19 @@ class Store(str):
             ) ENGINE = INNODB DEFAULT CHARSET = utf8;'
             self.cursor.execute(create_txpool_cache_table_sql)
 
+            #relayer gas
+            create_relayer_gas_table_sql = '\
+            CREATE TABLE relayer_gas (\
+                seq_id INT ( 10 ) NOT NULL auto_increment,\
+                send_timestamp BIGINT ( 20 ) DEFAULT 0,\
+                public_ip VARCHAR ( 40 ) DEFAULT "",\
+                count BIGINT ( 20 ) DEFAULT 0,\
+                amount BIGINT ( 20 ) DEFAULT 0,\
+                detail VARCHAR ( 80 ) DEFAULT 0,\
+                PRIMARY KEY ( seq_id )\
+            ) ENGINE = INNODB DEFAULT CHARSET = utf8;'
+            self.cursor.execute(create_relayer_gas_table_sql)
+
             #metrics_alarm
             create_metrics_alarm_table_sql = '\
             CREATE TABLE metrics_alarm (\
