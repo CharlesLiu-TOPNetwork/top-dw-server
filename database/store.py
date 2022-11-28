@@ -150,6 +150,9 @@ class Store(str):
                 archive INT ( 10 ) DEFAULT 0 NOT NULL,\
                 edge INT ( 10 ) DEFAULT 0 NOT NULL,\
                 fullnode INT ( 10 ) DEFAULT 0 NOT NULL,\
+                evm_auditor INT ( 10 ) DEFAULT 0 NOT NULL,\
+                evm_validator INT ( 10 ) DEFAULT 0 NOT NULL,\
+                relay INT ( 10 ) DEFAULT 0 NOT NULL,\
             INDEX ( timestamp, public_ip ) \
             ) ENGINE = INNODB DEFAULT CHARSET = utf8;'
             self.cursor.execute(create_vnode_status_table_sql)

@@ -1687,6 +1687,9 @@ def query_ip_vnode_status():
         'archive': [],
         'edge': [],
         'fullnode': [],
+        'evm_auditor': [],
+        'evm_validator': [],
+        'relay': [],
     }
     # new_status = False
     for item in query_items:
@@ -1701,6 +1704,9 @@ def query_ip_vnode_status():
         res_item['archive'].append(item['archive'])
         res_item['edge'].append(item['edge'])
         res_item['fullnode'].append(item['fullnode'])
+        res_item['evm_auditor'].append(item['evm_auditor'] if 'evm_auditor' in item else 0)
+        res_item['evm_validator'].append(item['evm_validator'] if 'evm_validator' in item else 0)
+        res_item['relay'].append(item['relay'] if 'relay' in item else 0)
 
     # if new_status:
     res = render_template('joint/body_center_line_chart_for_vnode_status2.html.j2',

@@ -34,6 +34,9 @@ class VnodeStatusConsumer(object):
             "archive":0,
             "edge":0,
             "fullnode":0,
+            "evm_auditor":0,
+            "evm_validator":0,
+            "relay":0,
         }
 
         return
@@ -110,6 +113,12 @@ class VnodeStatusConsumer(object):
         item['edge'] = packet.get('edge')
         if packet.get('fullnode'):
             item['fullnode'] = packet.get('fullnode')
+        if packet.get('evm_auditor'):
+            item['evm_auditor'] = packet.get('evm_auditor')
+        if packet.get('evm_validator'):
+            item['evm_validator'] = packet.get('evm_validator')
+        if packet.get('relay'):
+            item['relay'] = packet.get('relay')
         
         self.mysql_db.insert_into_db(db, "vnode_status", item)
 
