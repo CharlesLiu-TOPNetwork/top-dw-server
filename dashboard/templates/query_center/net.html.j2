@@ -1,0 +1,51 @@
+
+<script type="text/javascript">
+    let default_database_str = 'choose database';
+    $(document).ready(function () {
+        
+        $("#loading").hide();
+        
+        $(".database_selector").change( function(){
+            database = $(".database_selector").val();
+            console.log("change database selector "+database)
+            update_result()
+        });
+        function update_result(){
+            database = $(".database_selector").val()
+            if(database == default_database_str){
+                return
+            }
+            query_net_path = "/query_net_info/?database=" + database
+            console.log(query_net_path)
+            htmlobj = $.ajax({
+                url: query_net_path,
+                async: true,
+                beforeSend: function () {
+                    $("#Result_DIV").animate({ opacity: .4 }, 500, function () { })
+                    $("#loading").show();
+                    console.log("before send");
+                },
+                complete: function () {
+                    $("#Result_DIV").animate({ opacity: 1 }, 1000, function () { })
+                    $("#loading").hide();
+                    $("#Result_DIV").html(htmlobj.responseText);
+                    console.log("after send");
+                },
+
+            });
+        };
+    })
+</script>
+
+<div class = "function_selectors">
+
+    <select class="database_selector">
+        <option>choose database</option>
+        {%- for info in database_list -%}
+        <option value="{{info.name}}">{{info.time}}:{{info.name}}</option>
+        {%- endfor -%}
+    </select>
+    
+</div>
+
+<div id="Result_DIV"></div>

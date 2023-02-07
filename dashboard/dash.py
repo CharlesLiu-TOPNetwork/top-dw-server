@@ -812,6 +812,23 @@ def query_ip_category_tag_metrics_counter():
     return res
 
 
+# ![api] return a database's net status(both root && elect net)
+@app.route('/query_net_info',methods=['GET'])
+@app.route('/query_net_info/',methods=['GET'])
+def query_net_info():
+    database = request.args.get('database') or None
+    # root_info:
+    if not database:
+        return "set database"
+    # query_root_net_sql = 'SELECT CONCAT( FLOOR( neighbours / 10 )* 10, "+" ) AS neighbour_number, COUNT(*) AS node_size FROM kadinfo_root WHERE last_update_time > {} GROUP BY neighbour_number ORDER BY neighbour_number;'.format(int(time.time()-300))
+    qtime = int(time.time()-300)
+    query_root_net_sql = 'SELECT CASE WHEN neighbour_number IS NOT NULL THEN neighbour_number ELSE "Total" END AS neighbour_number, SUM( node_size ) AS node_size FROM ( SELECT	CONCAT( FLOOR( neighbours / 10 )* 10, "+" ) AS neighbour_number, COUNT(*) AS node_size FROM kadinfo_root WHERE last_update_time > {} GROUP BY neighbour_number UNION ALL SELECT NULL,COUNT(*) FROM kadinfo_root WHERE last_update_time > {} ) AS DATA GROUP BY	neighbour_number'.format(qtime, qtime)
+    root_query_items = myquery.query_database(database, query_root_net_sql)
+    
+    query_elect_net_sql = 'SELECT service_type,height,unknown_node_size AS unknown_node_number,COUNT( unknown_node_size ) AS node_cnt FROM	kadinfo_elect WHERE last_update_time > {} GROUP BY service_type, height, unknown_node_number ORDER BY height DESC, service_type;'.format(int(time.time()-300))
+    elect_query_items = myquery.query_database(database, query_elect_net_sql)
+    return render_template('joint/body_table_net_info.html.j2', root_data = root_query_items, elect_data = elect_query_items)
+
 # ![page] return message routing page for lookup
 @app.route('/query_message',methods=['GET'])
 @app.route('/query_message/',methods=['GET'])
@@ -1209,6 +1226,12 @@ def ip_metrics():
 @app.route('/one_metrics/',methods=['GET'])
 def one_metrics():
     return render_template('query_center/aggregated_by_tag.html.j2', database_list = database_time())
+
+# ![page] query net status, return net pages
+@app.route('/net',methods=['GET'])
+@app.route('/net/',methods=['GET'])
+def net():
+    return render_template('query_center/net.html.j2', database_list = database_time())
 
 # ![page] query one table address sync interval
 @app.route('/xsync',methods=['GET'])

@@ -1,0 +1,109 @@
+<style type="text/css">
+    .mainDiv {
+        width: 100%;
+    }
+
+    table {
+        border-collapse: collapse;
+        border-spacing: 0;
+    }
+
+    td,
+    th {
+        padding: 0;
+    }
+
+    .pure-table {
+        border-collapse: collapse;
+        border-spacing: 0;
+        empty-cells: show;
+        border: 1px solid #cbcbcb;
+        margin-top: 10px;
+    }
+
+    .pure-table caption {
+        color: #000;
+        font: italic 85%/1 arial, sans-serif;
+        padding: 1em 0;
+        text-align: center;
+    }
+
+    .pure-table td,
+    .pure-table th {
+        border-left: 1px solid #cbcbcb;
+        border-width: 0 0 0 1px;
+        font-size: inherit;
+        margin: 0;
+        overflow: visible;
+        padding: .5em 1em;
+    }
+
+    .pure-table thead {
+        background-color: #e0e0e0;
+        color: #000;
+        text-align: left;
+        vertical-align: bottom;
+    }
+
+    .pure-table td {
+        background-color: transparent;
+    }
+
+    .pure-table-bordered td {
+        border-bottom: 1px solid #cbcbcb;
+    }
+
+    .pure-table-bordered tbody>tr:last-child>td {
+        border-bottom-width: 0;
+    }
+</style>
+<h3>以下数据说明</h3>
+
+仅统计最近五分钟内更新的数据，汇总分类出Root网和各个选举网的状态。
+因此不是当日的数据库，或上报有问题时，会没有数据/总量不对。
+
+<h3>Root Net Status</h3>
+
+<table class="pure-table pure-table-bordered">
+    <thead>
+        <tr>
+            <th>Root邻居范围</th>
+            <th>节点个数</th>
+        </tr>
+    </thead>
+
+    <tbody class="table_content">
+        {% for item in root_data %}
+        <tr>
+            <td> {{ item.neighbour_number }} </td>
+            <td> {{ item.node_size }} </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+e.g. 110+ 表示邻居个数落在范围 [110-120) 之间
+
+<h3>Elect Net Status</h3>
+共识集群可能会同时存在两轮的子网
+<table class="pure-table pure-table-bordered">
+    <thead>
+        <tr>
+            <th>集群类型</th>
+            <th>集群高度</th>
+            <th>断连节点个数</th>
+            <th>上报节点个数</th>
+        </tr>
+    </thead>
+
+    <tbody class="table_content">
+        {% for item in elect_data %}
+        <tr>
+            <td> {{ item.service_type }} </td>
+            <td> {{ item.height }} </td>
+            <td> {{ item.unknown_node_number }} </td>
+            <td> {{ item.node_cnt }} </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+

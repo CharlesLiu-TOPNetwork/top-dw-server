@@ -185,6 +185,25 @@
 
                 });
             });
+            $("#tools_1_net").click(function () {
+                htmlobj = $.ajax({
+                    url: "/net/",
+                    async: true,
+                    beforeSend: function () {
+                        $("#main_page").animate({ opacity: .4 }, 500, function () { })
+                        $("#loading").show();
+                        console.log("before send");
+                    },
+                    complete: function () {
+                        $("#main_page").animate({ opacity: 1 }, 500, function () { })
+                        $("#loading").hide();
+                        $("#main_page").html(htmlobj.responseText);
+                        // console.log(htmlobj.responseText)
+                        console.log("after send");
+                    },
+
+                });
+            });
             $("#tools_1_xsync").click(function () {
                 htmlobj = $.ajax({
                     url: "/xsync/",
@@ -325,17 +344,17 @@
 <body>
 
     <div class="btn-group" style="width:102%">
-        <button id="tools_0_one_metrics" style="width:17%">one_metrics</button>
-        <button id="tools_0_ip_metrics" style="width:17%">ip_metrics</button>
+        <button id="tools_0_one_metrics" style="width:20%">one_metrics</button>
+        <button id="tools_0_ip_metrics" style="width:20%">ip_metrics</button>
         <!-- background-color:#9a0000; -->
-        <button id="tools_0_metrics_alarm" style="width:17%;">metrics_alarm</button>
-        <button id="tools_1_xsync" style="width:8%">xsync</button>
-        <button id="tools_1_store_cache_hit" style="width:8%">store_cache_hit</button>
-        <button id="tools_1_txpool" style="width:8%">txpool</button>
-        <button id="relayer_gas" style="width:8%">relayer_gas</button>
-        <button id="message_routing" style="width:8%">message_routing</button>
-        <button id="db_tools" style="width:5%">DB</button>
-        <button id="raw_api" style="width:4%">API</button>
+        <button id="tools_0_metrics_alarm" style="width:20%;">metrics_alarm</button>
+        <button id="tools_1_net" style="width:14%;">net</button>
+        <!--  <button id="tools_1_xsync" style="width:10%">xsync</button> -->
+        <!--  <button id="tools_1_store_cache_hit" style="width:10%">store_cache_hit</button> -->
+        <!--  <button id="tools_1_txpool" style="width:10%">txpool</button> -->
+        <button id="message_routing" style="width:10%">message_routing</button>
+        <button id="db_tools" style="width:8%">DB</button>
+        <button id="raw_api" style="width:8%">API</button>
     </div>
 
     <div id="loading" style="width:66px;height:66px;position:absolute;top:50%;left:50%;">
